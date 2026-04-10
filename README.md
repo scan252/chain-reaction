@@ -1,5 +1,7 @@
 # Chain Reaction - 链式反应
 
+[![Vercel Deploy](https://img.shields.io/badge/Vercel-Deployed-success?logo=vercel)](https://chain-reaction-demo.vercel.app)
+
 一款基于管道序列(Pipeline)的卡牌对战 Demo，灵感来自 Slay the Spire 的战斗系统。玩家将卡牌放置到管道槽位中，按顺序执行效果来攻击敌人并防御敌方的槽位攻击。
 
 ---
@@ -40,9 +42,17 @@
 
 ---
 
+## 在线演示
+
+🎮 **在线试玩**: https://chain-reaction-demo.vercel.app
+
 ## 快速开始
 
 ```bash
+# 克隆项目
+git clone https://github.com/scan252/chain-reaction.git
+cd chain-reaction
+
 # 安装依赖
 npm install
 
@@ -61,6 +71,13 @@ npm run lint
 
 构建命令 `npm run build` 会先执行 `tsc -b` 进行 TypeScript 类型检查，再由 Vite 打包。
 
+### 部署到 Vercel
+
+1. Fork 本仓库到你的 GitHub 账号
+2. 在 [Vercel](https://vercel.com) 导入项目
+3. 框架预设选择 `Vite`
+4. 点击 Deploy 即可自动部署
+
 ---
 
 ## 项目结构
@@ -69,7 +86,12 @@ npm run lint
 chain-reaction/
 ├── public/                     # 静态资源（不经过 Vite 处理）
 │   ├── favicon.svg             # 站点图标
-│   └── icons.svg               # 通用图标精灵图
+│   ├── icons.svg               # 通用图标精灵图
+│   └── pic/                    # 游戏图片资源
+│       ├── P1.jpg ~ P4.jpg     # 背景图
+│       ├── map/                # 地图相关图片
+│       ├── monster/            # 怪物头像
+│       └── pro/                # 职业头像
 ├── src/
 │   ├── assets/                 # 需经过 Vite 处理的资源
 │   │   ├── hero.png            # 首页主视觉
@@ -110,6 +132,18 @@ chain-reaction/
 ├── vite.config.ts              # Vite 配置
 └── eslint.config.js            # ESLint 配置
 ```
+
+---
+
+## 游戏特性
+
+- 🎴 **管道卡牌系统** - 将卡牌放入管道槽位，按顺序执行连击效果
+- ⚔️ **槽位攻防战斗** - 敌人攻击特定槽位，需要策略性放置防御卡牌
+- 🗺️ **Roguelike 地图** - 4层地图节点，包含战斗、商店、休息、Boss等节点
+- 🎁 **双轮奖励选择** - 战斗胜利后可进行两轮卡牌三选一
+- ✨ **职业系统** - 勇士与牧师两种职业，拥有不同的技能和初始卡组
+- 🏆 **遗物收集** - 收集各种遗物获得被动效果
+- 📊 **战斗统计** - 记录伤害、护甲、击败敌人等数据
 
 ---
 
