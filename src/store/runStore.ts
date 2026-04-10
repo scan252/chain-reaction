@@ -98,6 +98,8 @@ interface RunState {
   goToNpcHelp: () => void;
   // 添加卡牌到主牌库
   addCardToMasterDeck: (card: CardTemplate) => void;
+  // 返回主页面
+  returnToTitle: () => void;
 }
 
 export const useRunStore = create<RunState>()(
@@ -524,6 +526,14 @@ export const useRunStore = create<RunState>()(
     addCardToMasterDeck: (card: CardTemplate) => {
       set((state) => {
         state.masterDeck.push({ ...card });
+      });
+    },
+
+    // 返回主页面
+    returnToTitle: () => {
+      set((state) => {
+        state.scene = 'TITLE';
+        state.runActive = false;
       });
     },
   }))

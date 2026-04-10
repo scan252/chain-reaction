@@ -13,10 +13,16 @@ export function GameEndScreen({ isVictory = true }: GameEndScreenProps) {
   const masterDeck = useRunStore((s) => s.masterDeck);
   const relics = useRunStore((s) => s.relics);
   const startNewRun = useRunStore((s) => s.startNewRun);
+  const returnToTitle = useRunStore((s) => s.returnToTitle);
 
   const handleRestart = () => {
-    // 重置游戏状态
-    startNewRun();
+    if (isVictory) {
+      // 胜利后返回主页面
+      returnToTitle();
+    } else {
+      // 失败后重新开始（保持原有逻辑）
+      startNewRun();
+    }
   };
 
   return (
