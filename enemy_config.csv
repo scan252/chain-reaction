@@ -1,0 +1,12 @@
+layer,name,emoji,image,maxHp,baseDamage,damageVariance,attackPattern1,weight1,slotSpan1,attackPattern2,weight2,slotSpan2,attackPattern3,weight3,slotSpan3,attackPattern4,weight4,slotSpan4
+1,史莱姆,🟢,/pic/monster/m1.jpg,40,6,4,SINGLE,100,,,,,,,,,,,
+1,骷髅兵,💀,/pic/monster/m2.jpg,50,8,4,AREA_SWEEP,100,2,,,,,,,,,,
+2,暗影刺客,🗡️,/pic/monster/m3.jpg,60,10,6,WEAK_POINT_SNIPE,80,,SINGLE,20,,,,,,,,
+2,石像鬼,🗿,/pic/monster/m4.jpg,75,8,4,SPATIAL_LOCK,60,,AREA_SWEEP,40,2,,,,,,,
+2,火焰元素,🔥,/pic/monster/m5.jpg,55,12,6,SPREADING_FLAME,70,,SINGLE,30,,,,,,,,
+3,暗夜巫师,🧙,/pic/monster/m6.jpg,80,12,8,WEAK_POINT_SNIPE,50,,SPREADING_FLAME,50,,,,,,,,
+3,铁甲傀儡,🤖,/pic/monster/m7.jpg,95,10,6,SPATIAL_LOCK,50,,AREA_SWEEP,50,3,,,,,,,
+3,冰霜巨人,❄️,/pic/monster/m8.jpg,90,14,6,AREA_SWEEP,60,3,SPATIAL_LOCK,40,,,,,,,,
+BOSS,远古巨龙,🐉,/pic/monster/b1.jpg,150,15,10,SINGLE,25,,AREA_SWEEP,25,2,SPREADING_FLAME,25,,WEAK_POINT_SNIPE,25,,
+BOSS,深渊领主,👹,/pic/monster/b2.jpg,180,18,8,AREA_SWEEP,40,3,SPATIAL_LOCK,30,,WEAK_POINT_SNIPE,30,,,,,
+BOSS,虚空之眼,👁️,/pic/monster/b3.jpg,130,20,12,SPREADING_FLAME,40,,WEAK_POINT_SNIPE,40,,SPATIAL_LOCK,20,,,,,

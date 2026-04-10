@@ -1,0 +1,17 @@
+templateId,name,type,baseValue,effectId,description,color,rewardWeight,artPath
+atk_001,火球,ACTION,6,DEAL_DAMAGE,造成 6 点伤害,#e74c3c,20,/assets/cards/atk_001.png
+def_002,冰盾,ACTION,8,GAIN_ARMOR,获得 8 点护甲,#3498db,12,/assets/cards/def_002.png
+mod_001,X2,MODIFIER,2,MULTIPLY_NEXT,下一张牌效果 x2,#9b59b6,15,/assets/cards/mod_001.png
+atk_005,陨石术,ACTION,15,DEAL_DAMAGE,造成 15 点伤害,#d35400,3,/assets/cards/atk_005.png
+def_004,神圣护盾,ACTION,12,GAIN_ARMOR,获得 12 点护甲,#1abc9c,5,/assets/cards/def_004.png
+mod_004,连锁反应,MODIFIER,4,REPEAT_NEXT_SHIELD,下一张盾牌牌触发 4 次,#e91e63,2,/assets/cards/mod_004.png
+atk_006,毒雾,ACTION,7,DEAL_DAMAGE,造成 7 点伤害,#27ae60,15,/assets/cards/atk_006.png
+mod_005,多次打击,MODIFIER,4,REPEAT_NEXT_ATTACK,下一张攻击牌触发 4 次,#ff5722,5,/assets/cards/mod_005.png
+mod_009,均衡术,MODIFIER,3,REPEAT_NEXT,下一张牌触发 3 次,#00b894,10,/assets/cards/mod_009.png
+atk_007,移形换影,ACTION,4,PHASE_SHIFT,造成 4 点伤害，被攻击时伤害转移至左侧槽位,#6c5ce7,8,/assets/cards/atk_007.png
+def_005,镜面反射,ACTION,6,MIRROR_REFLECT,获得 6 点护甲，若此格完全格挡伤害，结算时总伤害+此格护盾值,#00cec9,8,/assets/cards/def_005.png
+mod_006,共鸣增幅,MODIFIER,2,RESONANCE_AMP_V2,下一张牌 x2，若下张牌为盾且完美格挡，卡组中所有动作牌基础数值在本场战斗中+1,#fdcb6e,5,/assets/cards/mod_006.png
+mod_007,背水一战,MODIFIER,0,DESPERATE_STRIKE,下一张攻击卡增加值 = 本回合将损失的血量；本回合受到伤害生命值最多扣到1,#d63031,3,/assets/cards/mod_007.png
+skill_001,强化,MODIFIER,4,MULTIPLY_NEXT,下一张牌效果 x4,#e17055,0,/assets/cards/skill_001.png
+mod_008,连锁防线,MODIFIER,0,CHAIN_DEFENSE,前面所有槽位中最高的护盾值加到每一个槽位上,#0984e3,5,/assets/cards/mod_008.png
+forbidden_001,我的王之力,ACTION,999,DEAL_DAMAGE,造成 999 点伤害,#8b0000,0,/assets/cards/forbidden_001.png
