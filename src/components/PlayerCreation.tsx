@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
-import type { PlayerClass, PlayerProfile } from '../types';
+import type { PlayerClass } from '../types';
 import { CLASS_MAX_MP } from '../types';
 
 const CLASS_INFO: Record<PlayerClass, { name: string; icon: string; description: string; skill: string; image?: string }> = {

@@ -1,7 +1,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-import { useRunStore } from '../store/runStore';
+// import { useRunStore } from '../store/runStore';
 import { Card } from './Card';
 import { StatusEffectType } from '../types';
 import type { SlotPreview, SlotLink } from '../types';
@@ -304,37 +304,37 @@ function PipelineSlot({ index, keepVisible }: { index: number; keepVisible?: boo
 
 export function PipelineBoard() {
   const phase = useGameStore((s) => s.phase);
-  const executePipelineAction = useGameStore((s) => s.executePipelineAction);
-  const pipeline = useGameStore((s) => s.pipeline);
+  // const executePipelineAction = useGameStore((s) => s.executePipelineAction);
+  // const pipeline = useGameStore((s) => s.pipeline);
   const executionLog = useGameStore((s) => s.executionLog);
   const lastExecutionResult = useGameStore((s) => s.lastExecutionResult);
   const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
   const dismissExecutionSummary = useGameStore((s) => s.dismissExecutionSummary);
   const nextTurn = useGameStore((s) => s.nextTurn);
   const pipelineSlots = useGameStore((s) => s.pipelineSlots);
-  const playerHp = useGameStore((s) => s.playerHp);
+  // const playerHp = useGameStore((s) => s.playerHp);
   const turnSummary = useGameStore((s) => s.turnSummary);
-  const battleStats = useGameStore((s) => s.battleStats);
-  const enemy = useGameStore((s) => s.enemy);
-  const onBattleVictory = useRunStore((s) => s.onBattleVictory);
-  const onBattleDefeat = useRunStore((s) => s.onBattleDefeat);
+  // const battleStats = useGameStore((s) => s.battleStats);
+  // const enemy = useGameStore((s) => s.enemy);
+  // const onBattleVictory = useRunStore((s) => s.onBattleVictory);
+  // const onBattleDefeat = useRunStore((s) => s.onBattleDefeat);
   const slotLinks = useGameStore((s) => s.slotLinks);
 
-  const hasCards = pipeline.some((c) => c !== null);
+  // const hasCards = pipeline.some((c) => c !== null);
 
-  const handleExecute = async () => {
-    await executePipelineAction();
-  };
+  // const handleExecute = async () => {
+  //   await executePipelineAction();
+  // };
 
-  const handleVictory = () => {
-    // 传递战斗统计信息
-    onBattleVictory(playerHp, {
-      totalDamage: battleStats.totalDamage,
-      totalArmor: battleStats.totalArmor,
-      effectiveArmor: battleStats.effectiveArmor,
-      enemyName: enemy.name,
-    });
-  };
+  // const handleVictory = () => {
+  //   // 传递战斗统计信息
+  //   onBattleVictory(playerHp, {
+  //     totalDamage: battleStats.totalDamage,
+  //     totalArmor: battleStats.totalArmor,
+  //     effectiveArmor: battleStats.effectiveArmor,
+  //     enemyName: enemy.name,
+  //   });
+  // };
 
   const handleDismissSummary = () => {
     // 只有非胜利/失败状态才进入下一回合

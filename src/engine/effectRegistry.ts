@@ -114,7 +114,7 @@ export const EffectRegistry: Record<string, EffectFunction> = {
   },
 
   // --- 新效果：移形换影 ---
-  PHASE_SHIFT: (ctx, card, slotIndex, pipeline) => {
+  PHASE_SHIFT: (ctx, card, slotIndex, _pipeline) => {
     const totalDamage = card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats;
     // 注册伤害转移：传递给前一格（左侧槽位）
     const newRedirect = { ...ctx.damageRedirectMap };

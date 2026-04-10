@@ -76,7 +76,7 @@ function TitleScreen({ onCreateCharacter }: TitleScreenProps) {
 function App() {
   const scene = useRunStore((s) => s.scene);
   const showRestChoice = useRunStore((s) => s.showRestChoice);
-  const playerProfile = useRunStore((s) => s.playerProfile);
+  // const playerProfile = useRunStore((s) => s.playerProfile);
   const [showPlayerCreation, setShowPlayerCreation] = useState(false);
   const lastSceneRef = useRef<SceneType>('TITLE');
   

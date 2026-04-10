@@ -21,7 +21,7 @@ import { Card } from './Card';
 import { RelicDisplay } from './RelicDisplay';
 import { BuffDisplay } from './BuffDisplay';
 import type { CardInstance, PlayerClass } from '../types';
-import { CLASS_MAX_MP } from '../types';
+// import { CLASS_MAX_MP } from '../types';
 
 const CLASS_NAMES: Record<PlayerClass, string> = {
   WARRIOR: '勇士',

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useRunStore } from '../store/runStore';
-import { MapNodeType, type MapNode, CardType } from '../types';
+import { MapNodeType, type MapNode } from '../types';
 import { FORBIDDEN_CARD } from '../data/cardData';
 
 const NODE_EMOJI: Record<string, string> = {
@@ -53,7 +53,7 @@ export function MapScreen() {
   const playerMaxMp = useRunStore((s) => s.playerMaxMp);
   const masterDeck = useRunStore((s) => s.masterDeck);
   const pipelineSlots = useRunStore((s) => s.pipelineSlots);
-  const playerProfile = useRunStore((s) => s.playerProfile);
+  // const playerProfile = useRunStore((s) => s.playerProfile);
   const currentLayer = useRunStore((s) => s.currentLayer);
   
   // 吉祥物点击状态
@@ -68,7 +68,7 @@ export function MapScreen() {
   // 是否显示神秘指令选择题
   const [showSecretQuestion, setShowSecretQuestion] = useState(false);
   // 是否进入强化模式
-  const [isEnhancedMode, setIsEnhancedMode] = useState(false);
+  const [, setIsEnhancedMode] = useState(false);
   // 是否显示禁忌卡牌详情
   const [showForbiddenCard, setShowForbiddenCard] = useState(false);
   // 是否显示卡组构筑

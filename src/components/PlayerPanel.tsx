@@ -8,10 +8,10 @@ const CLASS_NAMES: Record<PlayerClass, string> = {
   PRIEST: '牧师',
 };
 
-const CLASS_ICONS: Record<PlayerClass, string> = {
-  WARRIOR: '⚔️',
-  PRIEST: '✨',
-};
+// const CLASS_ICONS: Record<PlayerClass, string> = {
+//   WARRIOR: '⚔️',
+//   PRIEST: '✨',
+// };
 
 export function PlayerPanel() {
   const playerHp = useGameStore((s) => s.playerHp);
