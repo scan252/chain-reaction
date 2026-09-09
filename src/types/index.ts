@@ -205,6 +205,8 @@ export interface ExecutionContext {
   chainAttackCount: number;
   /** 本回合焚身总 HP 代价（结算后统一扣除） */
   totalBurnHpCost: number;
+  /** 本场战斗已付过焚身代价的卡（焚身每场只付一次） */
+  paidBurnCardIds: string[];
   /** 定位仪：共鸣加成 ×1.5 → ×2.25 */
   resonanceAmpMultiplier: number;
   /** 超导：连锁每次触发额外伤害（本场成长，经 globalDamageBonus 类似通道） */
@@ -353,6 +355,7 @@ export const INITIAL_CONTEXT: ExecutionContext = {
   globalDamageBonus: 0,
   chainAttackCount: 0,
   totalBurnHpCost: 0,
+  paidBurnCardIds: [],
   resonanceAmpMultiplier: 1,
   chainBonusPerTrigger: 0,
   nextCardChainBonus: 0,

@@ -36,7 +36,7 @@ const POOL_L1: EnemyTemplate[] = [
 const POOL_L2: EnemyTemplate[] = [
   {
     name: '暗影刺客', emoji: '🗡️', image: '/pic/monster/m3.webp',
-    maxHp: 58, baseDamage: 10, damageVariance: 5,
+    maxHp: 58, baseDamage: 9, damageVariance: 5,
     attackPatterns: [
       { pattern: AttackPattern.WEAK_POINT_SNIPE, weight: 70 },
       { pattern: AttackPattern.SINGLE, weight: 30 },
@@ -52,7 +52,7 @@ const POOL_L2: EnemyTemplate[] = [
   },
   {
     name: '火焰元素', emoji: '🔥', image: '/pic/monster/m5.webp',
-    maxHp: 60, baseDamage: 11, damageVariance: 5,
+    maxHp: 60, baseDamage: 10, damageVariance: 5,
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 60 },
       { pattern: AttackPattern.CHARGE_UP, buffValue: KEYWORD.CHARGE_UP_MULTIPLIER, weight: 40 },
@@ -64,7 +64,7 @@ const POOL_L2: EnemyTemplate[] = [
 const POOL_L4: EnemyTemplate[] = [
   {
     name: '暗夜巫师', emoji: '🧙', image: '/pic/monster/m6.webp',
-    maxHp: 88, baseDamage: 12, damageVariance: 6,
+    maxHp: 80, baseDamage: 9, damageVariance: 6,
     attackPatterns: [
       { pattern: AttackPattern.WEAK_POINT_SNIPE, weight: 40 },
       { pattern: AttackPattern.CHARGE_UP, buffValue: KEYWORD.CHARGE_UP_MULTIPLIER, weight: 30 },
@@ -73,16 +73,16 @@ const POOL_L4: EnemyTemplate[] = [
   },
   {
     name: '铁甲傀儡', emoji: '🤖', image: '/pic/monster/m7.webp',
-    maxHp: 100, baseDamage: 10, damageVariance: 5,
+    maxHp: 92, baseDamage: 9, damageVariance: 5,
     attackPatterns: [
       { pattern: AttackPattern.SPATIAL_LOCK, weight: 40 },
-      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 35 },
+      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 35 },
       { pattern: AttackPattern.FORTIFY, buffValue: 14, weight: 25 },
     ],
   },
   {
     name: '冰霜蛇妖', emoji: '🐍', image: '/pic/monster/m8.webp',
-    maxHp: 96, baseDamage: 9, damageVariance: 4,
+    maxHp: 90, baseDamage: 8, damageVariance: 4,
     attackPatterns: [
       { pattern: AttackPattern.DOUBLE_STRIKE, weight: 50 },
       { pattern: AttackPattern.WEAKEN, buffValue: 1, weight: 30 },
@@ -95,7 +95,7 @@ const POOL_L4: EnemyTemplate[] = [
 const POOL_L5: EnemyTemplate[] = [
   {
     name: '深渊猎手', emoji: '👁️', image: '/pic/monster/m3.webp',
-    maxHp: 108, baseDamage: 14, damageVariance: 6,
+    maxHp: 98, baseDamage: 10, damageVariance: 6,
     attackPatterns: [
       { pattern: AttackPattern.WEAK_POINT_SNIPE, weight: 45 },
       { pattern: AttackPattern.DOUBLE_STRIKE, weight: 35 },
@@ -104,7 +104,7 @@ const POOL_L5: EnemyTemplate[] = [
   },
   {
     name: '熔火巨犬', emoji: '🐺', image: '/pic/monster/m5.webp',
-    maxHp: 118, baseDamage: 12, damageVariance: 6,
+    maxHp: 108, baseDamage: 9, damageVariance: 6,
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 45 },
       { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 40 },
@@ -117,7 +117,7 @@ const POOL_L5: EnemyTemplate[] = [
 const ELITE_L3: EnemyTemplate[] = [
   {
     name: '雷暴元素', emoji: '⛈️', image: '/pic/monster/b3.webp',
-    maxHp: 112, baseDamage: 12, damageVariance: 5, isElite: true,
+    maxHp: 85, baseDamage: 9, damageVariance: 5, isElite: true,
     // 蓄力→爆发 循环：考验防御峰值
     attackPatterns: [
       { pattern: AttackPattern.CHARGE_UP, buffValue: KEYWORD.CHARGE_UP_MULTIPLIER, weight: 60 },
@@ -126,7 +126,7 @@ const ELITE_L3: EnemyTemplate[] = [
   },
   {
     name: '熔岩巨兽', emoji: '🌋', image: '/pic/monster/b1.webp',
-    maxHp: 126, baseDamage: 10, damageVariance: 4, isElite: true,
+    maxHp: 95, baseDamage: 8, damageVariance: 4, isElite: true,
     // 全场燃烧压力：考验槽位经济
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 45 },
@@ -140,7 +140,7 @@ const ELITE_L3: EnemyTemplate[] = [
 const ELITE_L6: EnemyTemplate[] = [
   {
     name: '时之守卫', emoji: '⏳', image: '/pic/monster/b2.webp',
-    maxHp: 182, baseDamage: 15, damageVariance: 6, isElite: true,
+    maxHp: 105, baseDamage: 10, damageVariance: 6, isElite: true,
     // 锁槽+双打：考验序列运转
     attackPatterns: [
       { pattern: AttackPattern.SPATIAL_LOCK, weight: 45 },
@@ -150,7 +150,7 @@ const ELITE_L6: EnemyTemplate[] = [
   },
   {
     name: '腐蚀树妖', emoji: '🌳', image: '/pic/monster/m6.webp',
-    maxHp: 200, baseDamage: 8, damageVariance: 3, isElite: true,
+    maxHp: 115, baseDamage: 7, damageVariance: 3, isElite: true,
     // 高频多槽：考验平均格挡
     attackPatterns: [
       { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 50 },
@@ -164,35 +164,35 @@ const ELITE_L6: EnemyTemplate[] = [
 const BOSS_TEMPLATES: EnemyTemplate[] = [
   {
     name: '远古巨龙', emoji: '🐉', image: '/pic/monster/b1.webp',
-    maxHp: 300, baseDamage: 15, damageVariance: 7,
+    maxHp: 180, baseDamage: 9, damageVariance: 7,
     attackPatterns: [
       { pattern: AttackPattern.SINGLE, weight: 35 },
       { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 35 },
       { pattern: AttackPattern.CHARGE_UP, buffValue: KEYWORD.CHARGE_UP_MULTIPLIER, weight: 30 },
     ],
     phase2Patterns: [
-      { pattern: AttackPattern.CHARGE_UP, buffValue: 3.5, weight: 40 },
+      { pattern: AttackPattern.CHARGE_UP, buffValue: 2.25, weight: 40 },
       { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 35 },
       { pattern: AttackPattern.ENRAGE, buffValue: 6, weight: 25 },
     ],
   },
   {
     name: '深渊领主', emoji: '👹', image: '/pic/monster/b2.webp',
-    maxHp: 330, baseDamage: 17, damageVariance: 7,
+    maxHp: 185, baseDamage: 10, damageVariance: 7,
     attackPatterns: [
       { pattern: AttackPattern.SPATIAL_LOCK, weight: 35 },
       { pattern: AttackPattern.DOUBLE_STRIKE, weight: 40 },
       { pattern: AttackPattern.ENRAGE, buffValue: 4, weight: 25 },
     ],
     phase2Patterns: [
-      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 5, weight: 45 },
+      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 45 },
       { pattern: AttackPattern.WEAKEN, buffValue: 1, weight: 30 },
       { pattern: AttackPattern.DOUBLE_STRIKE, weight: 25 },
     ],
   },
   {
     name: '虚空之眼', emoji: '👁️', image: '/pic/monster/b3.webp',
-    maxHp: 280, baseDamage: 19, damageVariance: 9,
+    maxHp: 170, baseDamage: 10, damageVariance: 9,
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 40 },
       { pattern: AttackPattern.WEAK_POINT_SNIPE, weight: 35 },
@@ -200,7 +200,7 @@ const BOSS_TEMPLATES: EnemyTemplate[] = [
     ],
     phase2Patterns: [
       { pattern: AttackPattern.WEAK_POINT_SNIPE, weight: 40 },
-      { pattern: AttackPattern.CHARGE_UP, buffValue: 3, weight: 35 },
+      { pattern: AttackPattern.CHARGE_UP, buffValue: 2.25, weight: 35 },
       { pattern: AttackPattern.SPREADING_FLAME, weight: 25 },
     ],
   },
@@ -261,10 +261,12 @@ export function generateEnemyIntent(
     case AttackPattern.AREA_SWEEP: {
       const span = Math.min(chosen.slotSpan ?? 2, pipelineSlots);
       const start = Math.floor(Math.random() * (pipelineSlots - span + 1));
+      // 大范围顺劈每槽伤害衰减（软化疗程压力）
+      const perSlot = span >= 3 ? Math.floor(damage * 0.75) : damage;
       for (let i = start; i < start + span; i++) {
-        attacks.push({ slotIndex: i, damage });
+        attacks.push({ slotIndex: i, damage: perSlot });
       }
-      description = `顺劈槽位 ${start + 1}-${start + span}（各 ${damage} 伤害）`;
+      description = `顺劈槽位 ${start + 1}-${start + span}（各 ${perSlot} 伤害）`;
       break;
     }
     case AttackPattern.SPREADING_FLAME: {
@@ -325,9 +327,9 @@ const LAYER_NODE_COUNTS = [2, 3, 2, 3, 3, 2, 1];
 const NODE_TYPE_WEIGHTS: Record<number, { type: MapNodeTypeT; weight: number }[]> = {
   0: [{ type: MapNodeType.BATTLE, weight: 1 }],
   1: [
-    { type: MapNodeType.BATTLE, weight: 50 },
+    { type: MapNodeType.BATTLE, weight: 45 },
     { type: MapNodeType.SHOP, weight: 20 },
-    { type: MapNodeType.REST, weight: 15 },
+    { type: MapNodeType.REST, weight: 20 },
     { type: MapNodeType.REWARD, weight: 15 },
   ],
   2: [{ type: MapNodeType.ELITE, weight: 1 }],

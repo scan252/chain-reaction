@@ -29,13 +29,13 @@ function updateArr(arr: number[], idx: number, delta: number): number[] {
 /** 攻击类效果（受攻击修饰/连锁计数影响） */
 export function isAttackEffect(effectId: string): boolean {
   return [
-    'DEAL_DAMAGE', 'PHASE_SHIFT', 'CHAIN_STORM', 'GRAND_FINALE', 'PHOENIX_STRIKE',
+    'DEAL_DAMAGE', 'PHASE_SHIFT', 'CHAIN_STORM', 'GRAND_FINALE', 'PHOENIX_STRIKE', 'SCORCH',
   ].includes(effectId);
 }
 
 /** 护盾类效果 */
 export function isShieldEffect(effectId: string): boolean {
-  return ['GAIN_ARMOR', 'MIRROR_REFLECT', 'MAGNETIC_SHIELD', 'GOLDEN_BELL'].includes(effectId);
+  return ['GAIN_ARMOR', 'MIRROR_REFLECT', 'MAGNETIC_SHIELD', 'GOLDEN_BELL', 'BURN_WARD'].includes(effectId);
 }
 
 /** 卡牌的攻/防类别（共鸣"同类"判定） */
@@ -50,6 +50,14 @@ function computeChainRepeats(card: CardInstance, ctx: ExecutionContext): number 
   const chain = (card.chain ?? 0) + ctx.nextCardChainBonus;
   if (chain <= 0) return 1;
   return 1 + chain * ctx.chainAttackCount;
+}
+
+/** 焚身付费：每张卡每场战斗只付一次 */
+function payBurn(ctx: ExecutionContext, card: CardInstance): number {
+  if (!card.burnCost) return 0;
+  if (ctx.paidBurnCardIds.includes(card.templateId + ':' + (card.uuid ?? ''))) return 0;
+  ctx.paidBurnCardIds.push(card.templateId + ':' + (card.uuid ?? ''));
+  return card.burnCost;
 }
 
 /** 单次触发的基础数值（含超导加成） */
@@ -274,7 +282,7 @@ export const EffectRegistry: Record<string, EffectFunction> = {
       accumulatedDamage: ctx.accumulatedDamage + total,
       slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
       chainAttackCount: ctx.chainAttackCount + 1,
-      totalBurnHpCost: ctx.totalBurnHpCost + (card.burnCost ?? 0),
+      totalBurnHpCost: ctx.totalBurnHpCost + payBurn(ctx, card),
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
       nextCardChainBonus: 0,
@@ -289,7 +297,7 @@ export const EffectRegistry: Record<string, EffectFunction> = {
       ...ctx,
       accumulatedArmor: ctx.accumulatedArmor + total,
       slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
-      totalBurnHpCost: ctx.totalBurnHpCost + (card.burnCost ?? 0),
+      totalBurnHpCost: ctx.totalBurnHpCost + payBurn(ctx, card),
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
       nextCardChainBonus: 0,
@@ -305,11 +313,23 @@ export const EffectRegistry: Record<string, EffectFunction> = {
     };
   },
 
-  // 焦土：点燃此槽 3 回合（该槽卡牌数值+100%）
-  SCORCH: (ctx, _card, slotIndex) => ({
-    ...ctx,
-    slotsToIgnite: [...ctx.slotsToIgnite, slotIndex],
-  }),
+  // 焦土：造成伤害并点燃此槽 3 回合（该槽卡牌数值+100%）
+  SCORCH: (ctx, card, slotIndex) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier;
+    const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
+    return {
+      ...ctx,
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      slotsToIgnite: [...ctx.slotsToIgnite, slotIndex],
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+    };
+  },
 
   // 亡命：HP≤50% 时本回合后续攻击 ×1.5
   DEADLY: (ctx) => ({
@@ -321,7 +341,7 @@ export const EffectRegistry: Record<string, EffectFunction> = {
   SACRIFICE: (ctx, card) => ({
     ...ctx,
     globalDamageBonus: ctx.globalDamageBonus + card.baseValue,
-    totalBurnHpCost: ctx.totalBurnHpCost + (card.burnCost ?? 0),
+    totalBurnHpCost: ctx.totalBurnHpCost + payBurn(ctx, card),
   }),
 
   // 不死鸟：焚身8：30 伤；HP≤10 时 45 伤
@@ -336,7 +356,7 @@ export const EffectRegistry: Record<string, EffectFunction> = {
       accumulatedDamage: ctx.accumulatedDamage + total,
       slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
       chainAttackCount: ctx.chainAttackCount + 1,
-      totalBurnHpCost: ctx.totalBurnHpCost + (card.burnCost ?? 0),
+      totalBurnHpCost: ctx.totalBurnHpCost + payBurn(ctx, card),
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
       nextCardChainBonus: 0,

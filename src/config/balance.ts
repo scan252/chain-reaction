@@ -69,13 +69,13 @@ export const SHOP = {
 /** 休息 / 事件 */
 export const REST = {
   /** 休息回血比例 */
-  HEAL_RATIO: 0.3,
+  HEAL_RATIO: 0.35,
   /** 冥想回复 MP 数 */
   MEDITATE_MP: 2,
 } as const;
 
 export const EVENT = {
-  HEAL_RATIO: 0.2,
+  HEAL_RATIO: 0.3,
   GOLD: 100,
 } as const;
 
@@ -103,7 +103,7 @@ export const KEYWORD = {
   /** 永动链轮遗物的共鸣加成 */
   RESONANCE_ENGINE_BONUS: 0.75,
   /** 蓄力：下一击倍率 */
-  CHARGE_UP_MULTIPLIER: 2.5,
+  CHARGE_UP_MULTIPLIER: 1.75,
   /** 亡命阈值（HP 百分比） */
   DEADLY_THRESHOLD: 0.5,
   DEADLY_MULTIPLIER: 1.5,
@@ -114,7 +114,7 @@ export const KEYWORD = {
 /** 敌人难度系数 */
 export const DIFFICULTY = {
   NORMAL: { hpMul: 1, dmgMul: 1 },
-  ELITE: { hpMul: 1.25, dmgMul: 1.15 },
+  ELITE: { hpMul: 1.15, dmgMul: 1.1 },
 } as const;
 
 /** 升级（锻造） */

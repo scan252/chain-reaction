@@ -191,6 +191,8 @@ interface GameState {
   globalDamageBonus: number;
   /** 超导：连锁触发额外伤害（本场累计） */
   battleChainBonus: number;
+  /** 本场已付焚身代价的卡实例（焚身每场只付一次） */
+  battleBurnPaid: string[];
   /** 本场累计损失 HP（复仇誓言） */
   hpLostThisBattle: number;
   /** 上回合总伤害（过载判定基准） */
@@ -234,9 +236,11 @@ function buildContext(state: {
   hpLostThisBattle: number;
   weakened: boolean;
   attackedSlotCount: number;
+  paidBurnCardIds?: string[];
 }): ExecutionContext {
   return {
     ...INITIAL_CONTEXT,
+    paidBurnCardIds: state.paidBurnCardIds ?? [],
     slotArmors: new Array(state.pipelineLength).fill(0),
     slotDamageContributions: new Array(state.pipelineLength).fill(0),
     desperateHpLoss: state.desperateHpLoss,
@@ -280,6 +284,7 @@ export const useGameStore = create<GameState>()(
     skipRequested: false,
     globalDamageBonus: 0,
     battleChainBonus: 0,
+    battleBurnPaid: [],
     hpLostThisBattle: 0,
     lastTurnDamage: 0,
     comboCount: 0,
@@ -445,6 +450,7 @@ export const useGameStore = create<GameState>()(
         hpLostThisBattle: state.hpLostThisBattle,
         weakened,
         attackedSlotCount,
+        paidBurnCardIds: state.battleBurnPaid,
       });
 
       const resonanceRate = relics.includes('RESONANCE_ENGINE')
@@ -516,6 +522,7 @@ export const useGameStore = create<GameState>()(
         hpLostThisBattle: get().hpLostThisBattle,
         weakened,
         attackedSlotCount,
+        paidBurnCardIds: get().battleBurnPaid,
       });
 
       // === 阶段一：管道执行 ===
@@ -576,7 +583,7 @@ export const useGameStore = create<GameState>()(
           } else if (card.effectId === 'PHASE_SHIFT') {
             state.executionLog.push(`${card.name} → 伤害转移至左侧`);
           } else if (card.effectId === 'SCORCH') {
-            state.executionLog.push(`${card.name} → 点燃槽位 ${i + 1}`);
+            state.executionLog.push(`${card.name} → 伤害+点燃槽位 ${i + 1}`);
           } else if (card.effectId === 'DEADLY') {
             state.executionLog.push(`${card.name} → ${ctx.deadlyEligible ? '亡命 ×1.5 生效！' : 'HP 高于 50%，未生效'}`);
           } else {
@@ -683,7 +690,10 @@ export const useGameStore = create<GameState>()(
           state.playerHp = Math.max(0, state.playerHp - combatResult.totalPlayerHpLoss);
         }
 
-        // 焚身代价（最多扣到 1）
+        // 焚身代价（每场只付一次，最多扣到 1）
+        for (const id of ctx.paidBurnCardIds) {
+          if (!state.battleBurnPaid.includes(id)) state.battleBurnPaid.push(id);
+        }
         const burnCost = Math.min(ctx.totalBurnHpCost, Math.max(0, state.playerHp - 1));
         if (burnCost > 0) {
           state.playerHp -= burnCost;
@@ -715,8 +725,8 @@ export const useGameStore = create<GameState>()(
           state.executionLog.push(`反击 → 附加伤害 +${combatResult.riposteDamage}`);
         }
         if (combatResult.perfectBlockTrigger) {
-          state.globalDamageBonus += 2;
-          state.executionLog.push('黄金钟 → 全场动作牌本场 +2');
+          state.globalDamageBonus += 4;
+          state.executionLog.push('黄金钟 → 全场动作牌本场 +4');
         }
         if (combatResult.resonanceTrigger) {
           state.globalDamageBonus += 1;

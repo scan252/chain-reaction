@@ -21,7 +21,7 @@ function keywordBadges(card: CardInstance): { text: string; title: string; class
 }
 
 function getDisplayValue(card: CardInstance): string {
-  if (card.effectId === 'DEADLY' || card.effectId === 'SCORCH') return '⚡';
+  if (card.effectId === 'DEADLY') return '⚡';
   if (card.effectId === 'RESONANCE_TUNER') return '≋';
   if (card.effectId === 'REVENGE_VOW') return '⚔';
   if (card.effectId === 'DESPERATE_STRIKE') return '?';
