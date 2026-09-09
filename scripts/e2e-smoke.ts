@@ -68,10 +68,9 @@ async function main() {
   check('进入战斗界面', battleText >= 1);
   check('抽到手牌(8张)', await page.evaluate(() => document.body.innerText.includes('拖拽卡牌到上方槽位')));
 
-  // 8. 放置手牌到槽位（用 store 直连以绕过拖拽：模拟 addToPipeline）
-  const placed = await page.evaluate(() => {
+  // 8. 放置手牌到槽位：优先 store 直连（dev），生产环境用真实鼠标拖拽
+  let placed = await page.evaluate(() => {
     const w = window as unknown as { __gameStore?: { getState: () => { hand: { uuid: string }[]; addToPipeline: (u: string, i: number) => void } } };
-    // gameStore 未暴露时，通过点击手牌+槽位模拟拖拽不可行，改为暴露式调用
     if (w.__gameStore) {
       const s = w.__gameStore.getState();
       let slot = 0;
@@ -84,18 +83,48 @@ async function main() {
     }
     return -1;
   });
+
+  if (placed === -1) {
+    // 生产路径：真实指针拖拽（dnd-kit PointerSensor: down → move ≥5px → up）
+    placed = 0;
+    for (let i = 0; i < 5; i++) {
+      const from = await page.evaluate(() => {
+        const cards = document.querySelectorAll('[data-testid="hand-card"], .cursor-grab');
+        const el = cards[0] as HTMLElement | undefined;
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 - 20 };
+      });
+      const to = await page.evaluate((slotIdx) => {
+        const slots = Array.from(document.querySelectorAll('[data-slot-index]')) as HTMLElement[];
+        const el = slots[slotIdx];
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }, i);
+      if (!from || !to) break;
+      await page.mouse.move(from.x, from.y);
+      await page.mouse.down();
+      await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+      await page.mouse.move(to.x, to.y, { steps: 5 });
+      await page.mouse.up();
+      await page.waitForTimeout(400);
+      placed++;
+    }
+  }
   check('放置卡牌到管道', placed > 0, `placed=${placed}`);
 
   if (placed > 0) {
     // 9. 执行结算
     await page.getByRole('button', { name: /执行结算/ }).click();
     await page.waitForTimeout(500);
-    // 跳过动画加速
+    // 跳过动画加速（dev 环境生效；生产环境自然等待动画结束）
     await page.evaluate(() => {
       const w = window as unknown as { __gameStore?: { getState: () => { requestSkip: () => void } } };
       w.__gameStore?.getState().requestSkip();
     });
-    await page.waitForTimeout(2500);
+    // 等待结算完成（生产动画全速约 3.5s，多留余量）
+    await page.waitForTimeout(4500);
 
     // 10. 结算总结出现并可进入下一回合
     const summaryVisible = await page.evaluate(() => document.body.innerText.includes('点击进入下一回合') || document.body.innerText.includes('总伤害'));
