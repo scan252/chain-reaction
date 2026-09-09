@@ -268,11 +268,6 @@ export const CLASS_MAX_MP: Record<PlayerClass, number> = {
   PRIEST: 5,
 };
 
-export const CLASS_SKILL_COST: Record<PlayerClass, number> = {
-  WARRIOR: 1,
-  PRIEST: 1,
-};
-
 // --- 16. 遗物系统 ---
 
 export const RelicId = {

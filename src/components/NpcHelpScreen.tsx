@@ -2,9 +2,18 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
 import { Card } from './Card';
-import { RELICS, type RelicId } from '../types';
+import { RELICS, type CardTemplate, type RelicId } from '../types';
 import { generateRewardCards } from '../data/cardData';
-import type { CardTemplate } from '../types';
+
+// Fisher-Yates 洗牌（均匀分布）
+function shuffle<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export function NpcHelpScreen() {
   const [showReward, setShowReward] = useState(false);
@@ -13,15 +22,13 @@ export function NpcHelpScreen() {
   const [rewardCards] = useState(() => generateRewardCards(5).map(r => r.card));
   const [rewardRelics] = useState(() => {
     const allRelicIds = Object.keys(RELICS) as RelicId[];
-    const shuffled = [...allRelicIds].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 2);
+    return shuffle(allRelicIds).slice(0, 2);
   });
   
   const startNewRun = useRunStore((s) => s.startNewRun);
   const playerProfile = useRunStore((s) => s.playerProfile);
   const addRelic = useRunStore((s) => s.addRelic);
-  // 使用getState来获取最新状态，避免闭包问题
-  const runStore = useRunStore;
+  const addCardToMasterDeck = useRunStore((s) => s.addCardToMasterDeck);
 
   const handleAccept = () => {
     setShowReward(true);
@@ -41,11 +48,9 @@ export function NpcHelpScreen() {
   };
 
   const handleStartGame = () => {
-    // 添加选中的卡牌到卡组（使用store的set方法）
+    // 添加选中的卡牌到卡组
     if (selectedCard) {
-      runStore.setState((state) => {
-        state.masterDeck.push({ ...selectedCard });
-      });
+      addCardToMasterDeck(selectedCard);
     }
     // 添加选中的遗物
     if (selectedRelic) {

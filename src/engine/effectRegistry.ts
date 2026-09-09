@@ -537,12 +537,3 @@ export function simulateForDesperateStrike(
   return simResult.totalPlayerHpLoss;
 }
 
-// 保持向后兼容的旧函数（不再使用但避免编译错误）
-export function executePipeline(
-  cards: CardInstance[],
-  initialContext: ExecutionContext,
-): ExecutionContext {
-  const pipeline: (CardInstance | null)[] = cards;
-  const emptyStatuses: SlotStatus[] = cards.map(() => ({ isLocked: false, statusEffects: [] }));
-  return executePipelineV2(pipeline, initialContext, emptyStatuses);
-}

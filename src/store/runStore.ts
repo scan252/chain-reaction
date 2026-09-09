@@ -24,6 +24,30 @@ import {
 import { buildStarterDeck, generateRewardCards, generateShopItems } from '../data/cardData';
 import { generateGameMap } from '../data/mapData';
 
+// 事件奖励节点的固定三选一选项
+function buildEventRewards(): EventReward[] {
+  return [
+    {
+      type: EventRewardType.GOLD_100,
+      name: '100金币',
+      description: '获得100金币',
+      icon: '💰',
+    },
+    {
+      type: EventRewardType.HEAL_20_MP_1,
+      name: '恢复20%血+1MP',
+      description: '回复20%生命值和1点MP',
+      icon: '💊',
+    },
+    {
+      type: EventRewardType.RANDOM_RELIC,
+      name: '随机遗物',
+      description: '获得一个随机遗物',
+      icon: '🏆',
+    },
+  ];
+}
+
 interface RunState {
   // 场景
   scene: SceneType;
@@ -83,13 +107,11 @@ interface RunState {
   proceedToMap: () => void;
   buyCard: (itemId: string) => void;
   removeCard: (templateId: string) => void;
-  healPlayer: (amount: number) => void;
   restHealHp: () => void;
   restRestoreMp: () => void;
   useSkill: () => void;
   leaveShop: () => void;
   // 事件奖励
-  generateEventRewards: () => void;
   collectEventReward: (rewardType: EventRewardType) => void;
   skipEventReward: () => void;
   // 遗物
@@ -249,27 +271,7 @@ export const useRunStore = create<RunState>()(
             break;
           case MapNodeType.REWARD:
             // 奖励节点：生成三选一奖励
-            const rewards: EventReward[] = [
-              {
-                type: EventRewardType.GOLD_100,
-                name: '100金币',
-                description: '获得100金币',
-                icon: '💰',
-              },
-              {
-                type: EventRewardType.HEAL_20_MP_1,
-                name: '恢复20%血+1MP',
-                description: '回复20%生命值和1点MP',
-                icon: '💊',
-              },
-              {
-                type: EventRewardType.RANDOM_RELIC,
-                name: '随机遗物',
-                description: '获得一个随机遗物',
-                icon: '🏆',
-              },
-            ];
-            state.pendingEventRewards = rewards;
+            state.pendingEventRewards = buildEventRewards();
             state.eventRewardCollected = false;
             state.scene = 'EVENT_REWARD';
             break;
@@ -410,12 +412,6 @@ export const useRunStore = create<RunState>()(
       });
     },
 
-    healPlayer: (amount: number) => {
-      set((state) => {
-        state.playerHp = Math.min(state.playerMaxHp, state.playerHp + amount);
-      });
-    },
-
     restHealHp: () => {
       set((state) => {
         state.playerHp = Math.min(state.playerMaxHp, state.playerHp + Math.floor(state.playerMaxHp * 0.3));
@@ -443,35 +439,6 @@ export const useRunStore = create<RunState>()(
     leaveShop: () => {
       set((state) => {
         state.scene = 'MAP';
-      });
-    },
-
-    // 事件奖励
-    generateEventRewards: () => {
-      const rewards: EventReward[] = [
-        {
-          type: EventRewardType.GOLD_100,
-          name: '100金币',
-          description: '获得100金币',
-          icon: '💰',
-        },
-        {
-          type: EventRewardType.HEAL_20_MP_1,
-          name: '恢复20%血+1MP',
-          description: '回复20%生命值和1点MP',
-          icon: '💊',
-        },
-        {
-          type: EventRewardType.RANDOM_RELIC,
-          name: '随机遗物',
-          description: '获得一个随机遗物',
-          icon: '🏆',
-        },
-      ];
-      set((state) => {
-        state.pendingEventRewards = rewards;
-        state.eventRewardCollected = false;
-        state.scene = 'EVENT_REWARD';
       });
     },
 
