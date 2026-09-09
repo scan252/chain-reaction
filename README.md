@@ -1,68 +1,70 @@
-# Chain Reaction - 链式反应
+# 链式反应 · Chain Reaction
 
-[![Vercel Deploy](https://img.shields.io/badge/Vercel-Deployed-success?logo=vercel)](https://chain-reaction-demo.vercel.app)
+> 一款**排兵布阵式**卡牌 Roguelike——你把卡牌排进序列槽，它们从左到右依次引爆；
+> 而敌人攻击的不是你，是你的**槽位**。每一张牌，既是进攻，也是那一格的守军。
 
-一款基于**管道序列（Pipeline）**的卡牌 Roguelike。你将卡牌排入槽位，卡牌按序结算形成连锁；敌人攻击的不是你，而是你的**槽位**——每一张牌既是进攻，也是那一格的守军。
+🎮 **在线试玩**：http://chain.yingzhu252.xyz
 
-🎮 **在线试玩**: http://chain.yingzhu252.xyz
+| ![战斗](docs/screenshots/08-battle-filled.png) | ![结算](docs/screenshots/10-summary.png) |
+|:---:|:---:|
+| 排布你的序列 | 连锁结算 |
 
-## v2 版本亮点
+| ![地图](docs/screenshots/05-map.png) | ![奖励](docs/screenshots/prod-reward-select.png) |
+|:---:|:---:|
+| 远征地图 | 战斗援助 |
 
-- **四大流派构筑**：连锁（排序滚雪球）· 共鸣（摆位互相加成）· 反击（完美格挡反伤）· 焚身（生命即资源）
-- **38 张卡牌 + 稀有度体系**（普通/罕见/稀有）+ 锻造升级
-- **10 种敌人意图**（新增蓄力/蓄势/双重打击/增益/衰弱）、4 场维度设防精英战、3 只多阶段 Boss
-- **标准/精英双难度**、Monte-Carlo 平衡模拟器验证（`scripts/simulate.ts`）
-- **爽点层**：连击计数、伤害分级飘字、OVERDRIVE 过载特效、反击"反！"标记
+---
 
-## 快速开始
+## 怎么玩
+
+每个回合分三步：
+
+1. **布阵** —— 从手牌中挑选卡牌，拖拽（或点选）置入 5 个序列槽；
+2. **连锁** —— 点击「执行结算」，卡牌从左到右依次触发。修饰牌放在左侧，可以成倍强化右侧的牌；
+3. **攻防** —— 敌人同时按预告攻击指定槽位：有盾的格子格挡，空着的格子会被打破并叠加「破绽」。
+
+杀掉敌人就赢，血被打空就输。7 层远征，击败 Boss 即通关。
+
+## 四大流派
+
+| 流派 | 关键词 | 玩法 |
+|------|--------|------|
+| ⚡ **连锁** | 连锁 N：左侧每有一张攻击牌已执行，就多触发一次 | 把攻击牌排在前面，让连锁牌滚成雪球 |
+| ≋ **共鸣** | 与相邻的同类卡互相 +50% | 把同类卡摆在一起，位置就是伤害 |
+| 🛡 **反击** | 本槽被攻击且未掉血时，反戈一击 | 读准敌人的意图，请君入瓮 |
+| 🔥 **焚身** | 支付生命，换取数倍的爆发 | 血线是第二资源条，胆子越大伤害越高 |
+
+流派之间可以自由混搭——「共鸣点火 + 连锁收尾」的混合队同样能打。
+
+## 一局之内
+
+- **远征地图**：7 层随机路径，战斗 / 商店 / 休息 / 事件 / 精英 / Boss
+- **精英战**：4 只精英各设一考——防御峰值、槽位经济、序列运转、平均格挡
+- **多阶段 Boss**：血量过半进入狂怒，招式全套换新
+- **锻造**：在休息处永久强化一张卡牌
+- **遗物**：改变规则的被动宝物，精英必掉
+- **双难度**：标准与精英（敌人更强，掉落更好）
+- ……以及，试着和地图上的猫多聊几次。
+
+## 用自己的电脑跑
 
 ```bash
 npm install
-npm run dev      # 开发模式 http://localhost:5173
-npm run build    # 类型检查 + 生产构建
-npm run lint     # ESLint
-npm run preview  # 预览生产构建
+npm run dev        # 开发模式 http://localhost:5173
+npm run build      # 生产构建
 ```
 
-## 技术栈
+需要 Node.js 18+。
 
-React 19 · TypeScript · Vite · Tailwind CSS 4 · Zustand(Immer) · @dnd-kit · Framer Motion
+## 给贡献者 / 想改数值的人
 
-## 文档导航
+- 战斗核心是纯函数引擎：`src/engine/effectRegistry.ts`
+- 全部数值集中在 `src/config/balance.ts` 一个文件里，改完跑 `npx tsx scripts/simulate.ts 400` 就能看四流派胜率
+- 设计文档：[数值白皮书](docs/BALANCE.md) · [代码审查](docs/REVIEW.md) · [重构方案](docs/IMPROVEMENT_PLAN.md) · [设计调研](docs/RESEARCH_NOTES.md)
+- 回归测试：`npx tsx scripts/e2e-smoke.ts`（需要本地起 dev server）
 
-| 文档 | 内容 |
-|------|------|
-| [docs/REVIEW.md](./docs/REVIEW.md) | 2026-09 全面代码审查报告（Bug/冗余/UX/性能） |
-| [docs/IMPROVEMENT_PLAN.md](./docs/IMPROVEMENT_PLAN.md) | 修复优化与数值机制重构总体方案 |
-| [docs/BALANCE.md](./docs/BALANCE.md) | 数值白皮书（数值框架、曲线、卡表、模拟器实测） |
-| [docs/RESEARCH_NOTES.md](./docs/RESEARCH_NOTES.md) | 现代卡牌游戏数值设计调研笔记 |
-| [docs/legacy/](./docs/legacy/) | 早期策划配置表（历史参考） |
+技术栈：React 19 · TypeScript · Vite · Tailwind CSS 4 · Zustand · Framer Motion
 
-## 工具脚本
+---
 
-```bash
-npx tsx scripts/simulate.ts 400   # 蒙特卡洛平衡模拟（胜率/流派/卡池抽查）
-npx tsx scripts/e2e-smoke.ts      # E2E 冒烟测试（需本地 dev 或设置 E2E_BASE_URL）
-npx tsx scripts/e2e-extended.ts   # E2E 扩展场景（商店/锻造/精英/难度）
-npx tsx scripts/capture-screens.ts # 截取关键界面截图
-npm run build                      # 生产构建（tsc + vite）
-```
-
-## 项目结构
-
-```
-src/
-├── components/   # React 组件（战斗、地图、商店、奖励等界面）
-├── data/         # 卡牌模板 / 敌人模板 / 地图生成
-├── engine/       # 效果注册表、管道执行、槽位战斗结算（纯函数核心）
-├── store/        # runStore（Roguelike 长线） + gameStore（单场战斗）
-└── types/        # TypeScript 类型与常量
-```
-
-## 核心规则速览
-
-- **阶段一**：手牌拖入 5~8 个管道槽位，从左到右依次结算；修饰卡改写后续卡牌（×N、重复 N 次、共鸣…）
-- **阶段二**：敌人按公示意图攻击特定槽位——有盾格挡、有卡换血、空槽受击且叠"破绽"
-- **阶段三**：管道累计总伤害扣敌人血，生成下回合意图
-- **Roguelike**：多层地图（战斗/商店/休息/事件/精英/Boss），战后排卡、金币、遗物、槽位扩建
-
+*排列你的命运，承受你的选择。*
