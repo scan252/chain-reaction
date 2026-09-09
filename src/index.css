@@ -35,32 +35,34 @@
   --font-body: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Source Han Sans SC', system-ui, sans-serif;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-html {
-  color-scheme: dark;
-}
+  html {
+    color-scheme: dark;
+  }
 
-body {
-  font-family: var(--font-body);
-  background: var(--ink-900);
-  color: var(--text-primary);
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    font-family: var(--font-body);
+    background: var(--ink-900);
+    color: var(--text-primary);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-#root {
-  width: 100vw;
-  height: 100vh;
-}
+  #root {
+    width: 100vw;
+    height: 100vh;
+  }
 
-::selection {
-  background: rgba(212, 169, 92, 0.35);
+  ::selection {
+    background: rgba(212, 169, 92, 0.35);
+  }
 }
 
 /* ---------- 滚动条 ---------- */

@@ -266,7 +266,7 @@ export function MapScreen() {
 
               {/* 点击提示 */}
               <motion.div
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/70 px-3 py-1 rounded-full text-xs text-white/90 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/75 px-3 py-1 rounded-full text-[11px] text-white/90 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity border border-white/10"
                 initial={{ y: -5 }}
                 animate={{ y: 0 }}
               >
@@ -278,7 +278,7 @@ export function MapScreen() {
             </div>
 
             {/* 吉祥物名称/描述区域 */}
-            <div className="mt-3 text-center">
+            <div className="mt-5 text-center">
               <p className="text-amber-300 font-bold text-sm text-shadow-sm">冒险伙伴</p>
               <p className="text-white/60 text-xs mt-1">（多聊天可能会有惊喜哦）</p>
             </div>
@@ -299,14 +299,6 @@ export function MapScreen() {
                         : 'border border-amber-200/50'
                     }`}
                   >
-                    {/* 对话框小三角 */}
-                    <div
-                      className={`absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white/95 rotate-45 hidden sm:block ${
-                        isHiddenDialogue
-                          ? 'border-l-4 border-b-4 border-yellow-400'
-                          : 'border-l border-b border-amber-200/50'
-                      }`}
-                    />
 
                     {/* 对话内容 */}
                     <p className="text-[var(--text-primary)] font-medium leading-relaxed relative z-10" style={DIALOG_FONT}>

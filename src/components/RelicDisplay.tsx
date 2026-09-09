@@ -91,8 +91,8 @@ function RelicIcon({ relicId, children }: { relicId: string; children?: ReactNod
       }}
     >
       {children ?? (
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-600/80 to-orange-700/80 border border-amber-400/50 flex items-center justify-center cursor-help shadow-lg shadow-amber-900/30">
-          <span className="text-xl">{relic.icon}</span>
+        <div className="w-9 h-9 rounded-md bg-[#12161f]/90 border border-[var(--line-strong)] flex items-center justify-center cursor-help shadow-md">
+          <span className="text-[17px] leading-none">{relic.icon}</span>
         </div>
       )}
       <AnimatePresence>
@@ -121,7 +121,7 @@ export function RelicDisplay() {
       {/* 遗物区域（无遗物时隐藏标签） */}
       {relics.length > 0 && (
         <div>
-          <div className="text-white/40 text-xs mb-1">遗物</div>
+          <div className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] mb-1">遗物</div>
           <div className="flex flex-wrap gap-2 max-w-[200px]">
             {relics.map((relicId) => (
               <RelicIcon key={relicId} relicId={relicId} />
@@ -131,14 +131,14 @@ export function RelicDisplay() {
       )}
 
       {/* 游戏规则按钮 */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+      <button
         onClick={() => setShowRulesModal(true)}
-        className={`px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600/80 to-cyan-600/80 border border-blue-400/50 text-white text-sm font-bold shadow-lg shadow-blue-900/30 cursor-pointer ${relics.length === 0 ? '' : 'mt-2'}`}
+        className="res-chip cursor-pointer hover:border-[var(--line-strong)] hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
+        style={{ height: 30 }}
       >
-        📖 规则
-      </motion.button>
+        <span className="text-[11px] text-[var(--gold-500)]">?</span>
+        规则
+      </button>
 
       <AnimatePresence>
         {showRulesModal && <RulesModal onClose={() => setShowRulesModal(false)} />}

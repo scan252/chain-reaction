@@ -49,7 +49,6 @@ export function GameArena() {
   const drawPile = useGameStore((s) => s.drawPile);
   const discardPile = useGameStore((s) => s.discardPile);
   const exhaustPile = useGameStore((s) => s.exhaustPile);
-  const pipeline = useGameStore((s) => s.pipeline);
   const skillUsedThisBattle = useGameStore((s) => s.skillUsedThisBattle);
   const pipelineSlots = useRunStore((s) => s.pipelineSlots);
   const playerProfile = useRunStore((s) => s.playerProfile);
@@ -62,7 +61,6 @@ export function GameArena() {
   const playerMaxHp = useGameStore((s) => s.playerMaxHp);
   const phase = useGameStore((s) => s.phase);
   const turnNumber = useGameStore((s) => s.turnNumber);
-  const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
   const enemy = useGameStore((s) => s.enemy);
   const battleStats = useGameStore((s) => s.battleStats);
 
@@ -79,6 +77,8 @@ export function GameArena() {
 
   const difficulty = useRunStore((s) => s.difficulty);
   const comboCount = useGameStore((s) => s.comboCount);
+  const turnSummary = useGameStore((s) => s.turnSummary);
+  const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
   const overdriveFlash = useGameStore((s) => s.overdriveFlash);
 
   // gameStore.pipeline 在 initBattle 后才有长度，用它作为战斗就绪的派生信号（避免 effect 内 setState）
@@ -150,8 +150,6 @@ export function GameArena() {
       }
     }
   };
-
-  const hasCards = pipeline.some((c) => c !== null);
 
   const handleExecute = async () => {
     await executePipelineAction();
@@ -228,6 +226,48 @@ export function GameArena() {
         {/* 进度信息条 */}
         <RunHUD />
 
+        {/* 战斗飘字：锚定敌我位置 */}
+        <AnimatePresence>
+          {turnSummary && showExecutionSummary && turnSummary.totalDamage > 0 && (
+            <motion.div
+              key={"dmg-" + turnSummary.totalDamage}
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1.05, y: -6 }}
+              exit={{ opacity: 0, y: -18 }}
+              transition={{ duration: 0.45, type: 'spring' }}
+              className="absolute right-[16%] top-[24%] z-20 pointer-events-none"
+            >
+              <span
+                className="num font-black"
+                style={{
+                  fontSize: turnSummary.totalDamage >= 60 ? 44 : 34,
+                  color: turnSummary.totalDamage >= 60 ? '#f0b46a' : '#ece7da',
+                  textShadow: '0 2px 10px rgba(5,7,12,0.9)',
+                }}
+              >
+                -{turnSummary.totalDamage}
+              </span>
+              {turnSummary.overdrive && (
+                <div className="text-[13px] font-black text-[var(--gold-300)] tracking-[0.25em] animate-pulse">⚡ 过载</div>
+              )}
+            </motion.div>
+          )}
+          {turnSummary && showExecutionSummary && turnSummary.hpLoss > 0 && (
+            <motion.div
+              key={"hp-" + turnSummary.hpLoss}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1.05 }}
+              exit={{ opacity: 0, y: 14 }}
+              transition={{ duration: 0.45, type: 'spring' }}
+              className="absolute left-[16%] top-[46%] z-20 pointer-events-none"
+            >
+              <span className="num font-black text-3xl text-[#e88a84]" style={{ textShadow: '0 2px 10px rgba(5,7,12,0.9)' }}>
+                -{turnSummary.hpLoss}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* 跳过动画按钮（结算动画期间显示） */}
         <AnimatePresence>
           {(phase === 'EXECUTE_PHASE1' || phase === 'EXECUTE_PHASE2') && (
@@ -237,7 +277,7 @@ export function GameArena() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               onClick={requestSkip}
-              className="absolute top-12 right-4 z-30 btn btn-secondary" style={{ height: 30, fontSize: 12, padding: '0 16px' }}
+              className="absolute top-12 right-3 z-30 btn btn-secondary" style={{ height: 28, fontSize: 12, padding: '0 14px' }}
             >
               跳过 ⏭
             </motion.button>
@@ -252,7 +292,7 @@ export function GameArena() {
               initial={{ scale: 1.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className='absolute top-1/3 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-black/50 rounded-xl px-4 py-1'
+              className='absolute left-[20%] top-[18%] z-20 pointer-events-none bg-black/55 rounded-xl px-4 py-1.5 border border-[rgba(249,115,22,0.4)]'
             >
               <span
                 className='font-black text-4xl'
@@ -329,32 +369,23 @@ export function GameArena() {
 
         {/* 执行序列区 */}
         <div className="shrink-0">
-          <PipelineBoard selectedUuid={selectedCardUuid} onSlotClick={(slot) => { if (selectedCardUuid) { addToPipeline(selectedCardUuid, slot); setSelectedCardUuid(null); } }} />
+          <PipelineBoard
+            selectedUuid={selectedCardUuid}
+            onSlotClick={(slot) => {
+              if (selectedCardUuid) {
+                addToPipeline(selectedCardUuid, slot);
+                setSelectedCardUuid(null);
+              }
+            }}
+            onExecute={handleExecute}
+            onNextTurn={handleNextTurn}
+          />
         </div>
 
         <div className="border-t border-white/5" />
 
         {/* 底部区域：行动按钮 | 角色面板 | 手牌区 | 提示 */}
         <div className="shrink-0 flex flex-col relative z-20">
-          {/* 行动按钮行 */}
-          <div className="flex justify-center items-center pt-1.5 pb-1 min-h-[46px]">
-            {phase === 'PLAY' && (
-              <button
-                onClick={handleExecute}
-                disabled={!hasCards}
-                className={`btn ${hasCards ? 'btn-danger' : 'btn-secondary'}`}
-                style={{ height: 40, letterSpacing: '0.35em', textIndent: '0.35em' }}
-              >
-                执行结算
-              </button>
-            )}
-
-            {showExecutionSummary && phase !== 'VICTORY' && phase !== 'DEFEAT' && (
-              <button onClick={handleNextTurn} className="btn btn-primary" style={{ height: 40 }}>
-                下一回合
-              </button>
-            )}
-          </div>
 
           {/* 角色面板 + 手牌 + 牌堆 */}
           <div className="flex items-end px-4 pt-1 gap-4">
@@ -485,19 +516,7 @@ export function GameArena() {
             </div>
           </div>
 
-          {/* 提示行 */}
-          <div className="flex justify-center pb-1 pt-0.5">
-            {phase === 'PLAY' && !selectedCardUuid && (
-              <span className="text-[11px] text-[var(--text-muted)] tracking-[0.2em]">
-                拖拽或点选卡牌置入序列 · 序列从左至右结算 · 点击已放置的卡牌可取回
-              </span>
-            )}
-            {phase === 'PLAY' && selectedCardUuid && (
-              <span className="text-[11px] text-[var(--gold-300)] tracking-[0.2em] animate-pulse">
-                点击上方空槽位放置卡牌
-              </span>
-            )}
-          </div>
+
         </div>
 
         {/* 技能使用提示 */}

@@ -185,7 +185,7 @@ export function NpcHelpScreen() {
         {/* 遗物选择 */}
         <div className="mb-10">
           <h3 className="text-white/70 text-lg mb-6 text-center">选择一个遗物</h3>
-          <div className="flex justify-center gap-8">
+          <div className="flex justify-center gap-6 items-stretch">
             {rewardRelics.map((relicId, index) => {
               const relic = RELICS[relicId];
               return (
@@ -197,17 +197,17 @@ export function NpcHelpScreen() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelectRelic(relicId)}
-                  className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
+                  className={`relative flex flex-col items-center gap-2.5 p-5 w-[210px] rounded-xl border transition-all ${
                     selectedRelic === relicId
                       ? 'bg-[rgba(212,169,92,0.12)] border-[var(--gold-500)]/60'
                       : 'bg-white/[0.04] border-[var(--line)] hover:bg-white/[0.08]'
                   }`}
                 >
-                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-4xl">
+                  <div className="w-14 h-14 rounded-lg bg-[#12161f] border border-[var(--line-strong)] flex items-center justify-center text-2xl">
                     {relic.icon}
                   </div>
-                  <div className="text-white font-bold text-lg">{relic.name}</div>
-                  <div className="text-white/50 text-sm max-w-[180px] text-center">
+                  <div className="text-[var(--text-primary)] font-bold text-[15px]">{relic.name}</div>
+                  <div className="text-[var(--text-secondary)] text-xs leading-relaxed text-center flex-1">
                     {relic.description}
                   </div>
                   {selectedRelic === relicId && (

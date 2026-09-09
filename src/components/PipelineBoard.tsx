@@ -5,9 +5,8 @@ import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { StatusEffectType } from '../types';
 import type { SlotPreview, SlotLink } from '../types';
-import { JUICE } from '../config/balance';
 
-// --- 闪电链接容器：按实际 DOM 位置绘制链接，避免硬编码宽度误差 ---
+// --- 闪电链接层：按实际 DOM 位置绘制 ---
 function LightningLinkLayer({ links }: { links: SlotLink[] }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [slotRects, setSlotRects] = useState<{ left: number; right: number; top: number; height: number }[]>([]);
@@ -36,7 +35,7 @@ function LightningLinkLayer({ links }: { links: SlotLink[] }) {
   if (slotRects.length === 0) return null;
 
   return (
-    <div ref={rowRef} className="absolute inset-0 pointer-events-none z-20">
+    <div className="absolute inset-0 pointer-events-none z-20">
       {links.map((link, index) => {
         const from = slotRects[link.from];
         const to = slotRects[link.to];
@@ -47,7 +46,6 @@ function LightningLinkLayer({ links }: { links: SlotLink[] }) {
   );
 }
 
-// 闪电链接特效组件（基于测量到的槽位坐标）
 function LightningLink({
   from,
   to,
@@ -63,225 +61,85 @@ function LightningLink({
   const linkWidth = Math.max(8, Math.abs(endX - startX));
   const centerY = from.top + from.height / 2;
 
-  const getColor = () => {
-    switch (type) {
-      case 'RESONANCE':
-        return '#22d3ee'; // 青色
-      case 'CHAIN_DEFENSE':
-        return '#3b82f6'; // 蓝色
-      case 'DESPERATE_STRIKE':
-        return '#ef4444'; // 红色
-      default:
-        return '#facc15'; // 黄色
-    }
-  };
-
-  const color = getColor();
+  const color =
+    type === 'RESONANCE' ? '#22d3ee' : type === 'CHAIN_DEFENSE' ? '#3b82f6' : type === 'DESPERATE_STRIKE' ? '#ef4444' : '#d4a95c';
 
   return (
     <motion.div
-      className="absolute h-1 rounded-full"
+      className="absolute h-[3px] rounded-full"
       style={{
         left: `${Math.min(startX, endX)}px`,
         top: `${centerY}px`,
         width: `${linkWidth}px`,
-        background: `linear-gradient(90deg, ${color}80, ${color}, ${color}80)`,
-        boxShadow: `0 0 10px ${color}, 0 0 20px ${color}80`,
+        background: `linear-gradient(90deg, ${color}60, ${color}, ${color}60)`,
       }}
-      initial={{ opacity: 0, scaleX: 0 }}
-      animate={{ opacity: 1, scaleX: 1 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
     >
-      {/* 闪电图标 */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg"
-        animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-        transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ color }}
-      >
-        ⚡
-      </motion.div>
-
-      {/* 流动光效 */}
       <motion.div
         className="absolute inset-0 rounded-full"
-        style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)' }}
         animate={{ x: isForward ? ['-100%', '100%'] : ['100%', '-100%'] }}
-        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
       />
     </motion.div>
   );
 }
 
-// 回合总结显示组件
-function TurnSummaryDisplay() {
-  const turnSummary = useGameStore((s) => s.turnSummary);
+// 受击预告：槽位底边的内嵌结果签（替代浮动的预览框）
+function SlotResultTag({ preview }: { preview: SlotPreview }) {
+  const fullyBlocked = preview.hpLoss === 0;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`absolute bottom-1 left-1 right-1 z-20 flex items-center justify-center gap-1 rounded-md py-[3px] text-[11px] font-bold pointer-events-none ${
+        fullyBlocked
+          ? 'bg-[rgba(110,180,110,0.16)] text-[#9ed49e] border border-[rgba(110,180,110,0.4)]'
+          : 'bg-[rgba(217,86,79,0.16)] text-[#e89a94] border border-[rgba(217,86,79,0.4)]'
+      }`}
+    >
+      {preview.isVulnerablePenalty ? (
+        <span>破绽！掉血 {preview.hpLoss}</span>
+      ) : fullyBlocked ? (
+        <span>格挡 ✓</span>
+      ) : (
+        <span>
+          掉血 {preview.hpLoss}
+          <span className="opacity-60"> / {preview.incomingDamage}</span>
+        </span>
+      )}
+    </motion.div>
+  );
+}
 
-  if (!turnSummary) return null;
+// 敌方攻击预告：骑在槽位上边缘的小红签
+function SlotAttackIndicator({ slotIndex }: { slotIndex: number }) {
+  const intent = useGameStore((s) => s.enemy.intent);
+  const attack = intent.attacks.find((a) => a.slotIndex === slotIndex);
+  if (!attack) return null;
 
   return (
-    <div className="flex items-center justify-center gap-3 text-xs">
-      <span className="text-blue-300 text-shadow-sm">生成护盾: {turnSummary.totalArmor}</span>
-      <span className="text-cyan-300 text-shadow-sm">有效护盾: {turnSummary.effectiveArmor}</span>
-      <span className="text-red-300 text-shadow-sm">扣血: {turnSummary.hpLoss}</span>
+    <div
+      className="absolute -top-[11px] left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#3a1210] border border-[rgba(217,86,79,0.7)] px-2 py-[2px] whitespace-nowrap shadow-md"
+      title={`敌人将攻击此槽位，伤害 ${attack.damage}`}
+    >
+      <span className="text-[#e88a84] text-[10px] leading-none">⚔</span>
+      <span className="num text-[12px] font-black leading-none text-[#f0a49e]">{attack.damage}</span>
     </div>
   );
 }
 
-// 伤害分级配色（爽点层：数字越大越炸裂）
-function damageTierStyle(dmg: number): { color: string; shadow: string; fontSize: string } {
-  const [T1, T2, T3, T4] = JUICE.DAMAGE_TIERS;
-  if (dmg >= T4) {
-    return {
-      color: '#f0abfc',
-      shadow: '0 0 30px rgba(240,171,252,0.9), 0 0 60px rgba(217,70,239,0.6), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-      fontSize: '5rem',
-    };
-  }
-  if (dmg >= T3) {
-    return {
-      color: '#ef4444',
-      shadow: '0 0 30px rgba(239,68,68,0.9), 0 0 60px rgba(239,68,68,0.5), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-      fontSize: '4.5rem',
-    };
-  }
-  if (dmg >= T2) {
-    return {
-      color: '#fb923c',
-      shadow: '0 0 24px rgba(249,115,22,0.8), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-      fontSize: '4rem',
-    };
-  }
-  if (dmg >= T1) {
-    return {
-      color: '#facc15',
-      shadow: '0 0 20px rgba(250,204,21,0.8), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-      fontSize: '3.5rem',
-    };
-  }
-  return {
-    color: '#e5e7eb',
-    shadow: '0 0 12px rgba(229,231,235,0.6), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-    fontSize: '3rem',
-  };
-}
-
-// 伤害特效组件
-function DamageEffects() {
-  const turnSummary = useGameStore((s) => s.turnSummary);
-  const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
-  const phase = useGameStore((s) => s.phase);
-
-  const shouldShowDamage = phase === 'EXECUTE_PHASE3' || phase === 'VICTORY' || phase === 'DEFEAT';
-
-  if (!showExecutionSummary || !shouldShowDamage || !turnSummary) {
-    return null;
-  }
-
-  const tier = damageTierStyle(turnSummary.totalDamage);
-
-  return (
-    <>
-      {/* 玩家受伤特效 */}
-      {turnSummary.hpLoss > 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5, x: -100 }}
-          animate={{ opacity: 1, scale: 1.2, x: -150 }}
-          exit={{ opacity: 0, y: 50 }}
-          transition={{ duration: 0.5, type: 'spring' }}
-          className="fixed left-1/4 top-1/2 z-50 pointer-events-none"
-        >
-          <div
-            className="font-black text-red-500"
-            style={{
-              fontSize: '3.5rem',
-              textShadow: '0 0 30px rgba(239,68,68,0.8), 0 0 60px rgba(239,68,68,0.5), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-              WebkitTextStroke: '2px white',
-            }}
-          >
-            -{turnSummary.hpLoss}
-          </div>
-        </motion.div>
-      )}
-
-      {/* 怪物受伤特效（分级变色） */}
-      {turnSummary.totalDamage > 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5, x: 100 }}
-          animate={{ opacity: 1, scale: 1.2, x: 150 }}
-          exit={{ opacity: 0, y: -50 }}
-          transition={{ duration: 0.5, type: 'spring', delay: 0.1 }}
-          className="fixed right-1/4 top-1/2 z-50 pointer-events-none flex flex-col items-center"
-        >
-          <div className="font-black" style={{ color: tier.color, fontSize: tier.fontSize, textShadow: tier.shadow }}>
-            -{turnSummary.totalDamage}
-          </div>
-          {turnSummary.overdrive && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: [1, 1.25, 1] }}
-              transition={{ duration: 0.8, repeat: 2 }}
-              className="font-black text-2xl mt-1"
-              style={{ color: '#fde047', textShadow: '0 0 20px #fde047, -2px -2px 0 #000, 2px 2px 0 #000' }}
-            >
-              ⚡ OVERDRIVE ⚡
-            </motion.div>
-          )}
-          {turnSummary.riposteDamage > 0 && (
-            <div className="font-bold text-xl mt-1" style={{ color: '#fb923c', textShadow: '0 0 12px #fb923c, -2px -2px 0 #000, 2px 2px 0 #000' }}>
-              反! +{turnSummary.riposteDamage}
-            </div>
-          )}
-        </motion.div>
-      )}
-    </>
-  );
-}
-
-function SlotAttackIndicator({ slotIndex }: { slotIndex: number }) {
-  const intent = useGameStore((s) => s.enemy.intent);
-  const attack = intent.attacks.find((a) => a.slotIndex === slotIndex);
-
-  if (!attack) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="absolute -top-12 left-1/2 -translate-x-1/2 font-black text-red-500 bg-red-950/90 border-2 border-red-500/70 rounded-xl px-4 py-2 whitespace-nowrap z-10 shadow-lg shadow-red-900/50"
-      style={{
-        fontSize: '24px',
-        textShadow: '0 0 12px rgba(239, 68, 68, 1), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
-      }}
-    >
-      ⚔ {attack.damage}
-    </motion.div>
-  );
-}
-
-function SlotPreviewOverlay({ preview }: { preview: SlotPreview }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="absolute top-full mt-1 left-1/2 -translate-x-1/2 font-bold bg-black/95 pointer-events-none border-2 border-white/40 rounded-2xl px-4 py-2 whitespace-nowrap z-[15] flex flex-col items-center gap-0.5 shadow-2xl"
-      style={{ fontSize: '13px' }}
-    >
-      <span className="text-red-400 text-shadow">⚔ 受击 {preview.incomingDamage}</span>
-      {preview.blockedDamage > 0 && (
-        <span className="text-blue-400 text-shadow">🛡 格挡 {preview.blockedDamage}</span>
-      )}
-      <span className={preview.hpLoss > 0 ? 'text-red-500 font-black text-shadow' : 'text-green-400 font-bold text-shadow'}>
-        {preview.hpLoss > 0 ? `💔 掉血 ${preview.hpLoss}` : '完全格挡!'}
-      </span>
-      {preview.isVulnerablePenalty && (
-        <span className="text-purple-400 text-shadow">💥 破绽!</span>
-      )}
-    </motion.div>
-  );
-}
-
-function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; selectedUuid?: string | null; onSlotClick?: (slot: number) => void }) {
+function PipelineSlot({
+  index,
+  selectedUuid,
+  onSlotClick,
+}: {
+  index: number;
+  selectedUuid?: string | null;
+  onSlotClick?: (slot: number) => void;
+}) {
   const card = useGameStore((s) => s.pipeline[index]);
   const pipelineSnapshot = useGameStore((s) => s.pipelineSnapshot);
   const executingIndex = useGameStore((s) => s.executingIndex);
@@ -292,7 +150,6 @@ function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; sel
   const intent = useGameStore((s) => s.enemy.intent);
   const globalDamageBonus = useGameStore((s) => s.globalDamageBonus);
 
-  // 结算阶段展示快照（此时 pipeline 已清空进弃牌堆）
   const displayCard = card ?? (phase === 'EXECUTE_PHASE3' ? pipelineSnapshot?.[index] ?? null : null);
 
   const isLocked = slotStatus?.isLocked ?? false;
@@ -307,7 +164,6 @@ function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; sel
     disabled: phase !== 'PLAY' || isLocked,
   });
 
-  // 槽内卡牌可拖拽换位（PLAY 阶段）
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
     id: `pipeline-card-${index}`,
     data: { type: 'pipeline-card', index, card },
@@ -318,69 +174,61 @@ function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; sel
   const isPhase2Attack = phase === 'EXECUTE_PHASE2' && executingIndex === index;
 
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
       data-slot-index={index}
       onClick={() => {
         if (phase === 'PLAY' && selectedUuid && !displayCard && !isLocked) onSlotClick?.(index);
       }}
-      className={`
-        w-32 h-40 rounded-xl border-2 border-dashed flex items-center justify-center
-        transition-colors relative touch-none
-        ${isLocked
-          ? 'border-purple-500/50 bg-purple-900/20'
+      className={`relative w-32 h-40 rounded-lg border flex items-center justify-center transition-colors ${
+        isLocked
+          ? 'border-[rgba(157,123,224,0.5)] bg-[rgba(157,123,224,0.08)]'
           : isPhase2Attack
-          ? 'border-red-500 bg-red-500/15'
-          : isOver
-          ? 'border-cyan-400 bg-cyan-400/10'
-          : isHighlighted
-          ? 'border-yellow-400 bg-yellow-400/10'
-          : isBurning
-          ? 'border-orange-500/60 bg-orange-500/10'
-          : selectedUuid && !displayCard
-          ? 'border-[var(--gold-500)]/70 bg-[rgba(212,169,92,0.08)] animate-pulse'
-          : isAttackTarget && phase === 'PLAY'
-          ? 'border-red-400/40 bg-red-500/5'
-          : 'border-[var(--line)] bg-white/[0.03]'}
-      `}
-      animate={isHighlighted ? {
-        boxShadow: ['0 0 0px transparent', '0 0 20px #facc1580', '0 0 0px transparent'],
-      } : isPhase2Attack ? {
-        boxShadow: ['0 0 0px transparent', '0 0 20px #ef444480', '0 0 0px transparent'],
-      } : {}}
-      transition={{ duration: 0.6, repeat: (isHighlighted || isPhase2Attack) ? Infinity : 0 }}
+            ? 'border-[rgba(217,86,79,0.8)] bg-[rgba(217,86,79,0.1)]'
+            : isOver
+              ? 'border-[var(--gold-400)] bg-[rgba(212,169,92,0.1)]'
+              : isHighlighted
+                ? 'border-[var(--gold-400)] bg-[rgba(212,169,92,0.08)]'
+                : isIgnited
+                  ? 'border-[rgba(240,146,60,0.7)] bg-[rgba(240,146,60,0.08)]'
+                  : isBurning
+                    ? 'border-[rgba(240,146,60,0.45)] bg-[rgba(240,146,60,0.05)]'
+                    : isAttackTarget && phase === 'PLAY'
+                      ? 'border-[rgba(217,86,79,0.45)] bg-[rgba(217,86,79,0.04)]'
+                      : isHighlighted
+                        ? 'border-[var(--gold-400)] ring-2 ring-[rgba(212,169,92,0.45)] bg-[rgba(212,169,92,0.08)]'
+                        : isPhase2Attack
+                        ? 'border-[rgba(217,86,79,0.9)] ring-2 ring-[rgba(217,86,79,0.45)] bg-[rgba(217,86,79,0.08)]'
+                        : selectedUuid && !displayCard
+                        ? 'border-[var(--gold-500)]/60 bg-[rgba(212,169,92,0.05)] animate-pulse'
+                        : 'border-dashed border-[var(--line)] bg-white/[0.02]'
+      }`}
     >
-      {/* 攻击标记 */}
+      {/* 敌方攻击预告：骑上边缘 */}
       {isAttackTarget && phase === 'PLAY' && <SlotAttackIndicator slotIndex={index} />}
 
-      {/* 预览 */}
-      {preview && phase === 'PLAY' && <SlotPreviewOverlay preview={preview} />}
+      {/* 预览结果签 */}
+      {preview && phase === 'PLAY' && !isLocked && <SlotResultTag preview={preview} />}
 
-      {/* 锁定覆盖 */}
+      {/* 锁定 */}
       {isLocked && (
-        <div className="absolute inset-0 rounded-xl bg-purple-900/30 flex items-center justify-center z-10">
-          <span className="text-2xl">🔒</span>
+        <div className="absolute inset-0 rounded-lg bg-[rgba(157,123,224,0.12)] flex items-center justify-center z-10">
+          <span className="text-xl opacity-80">🔒</span>
         </div>
       )}
 
-      {/* 焦土点燃指示器 */}
+      {/* 状态角标 */}
       {isIgnited && !isLocked && (
-        <motion.div
-          className="absolute top-1 left-1 text-sm"
-          animate={{ scale: [1, 1.25, 1], rotate: [0, 8, -8, 0] }}
-          transition={{ duration: 0.9, repeat: Infinity }}
-          title="焦土：此槽卡牌数值 +100%"
-        >
-          🔥✚
-        </motion.div>
+        <div className="absolute top-1 left-1 text-[11px]" title="焦土：此槽卡牌数值 +100%">
+          🔥
+        </div>
       )}
-
-      {/* 燃烧指示器 */}
       {isBurning && !isLocked && (
         <motion.div
-          className="absolute top-1 right-1 text-sm"
+          className="absolute top-1 right-1 text-[11px]"
           animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
+          transition={{ duration: 0.9, repeat: Infinity }}
+          title="燃烧：此槽卡牌数值减半"
         >
           🔥
         </motion.div>
@@ -392,7 +240,7 @@ function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; sel
             key={displayCard.uuid || 'snapshot'}
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: isDragging ? 0.35 : 1 }}
-            exit={{ scale: 0.5, opacity: 0, y: -20 }}
+            exit={{ scale: 0.5, opacity: 0 }}
             className="absolute inset-0"
           >
             <div
@@ -410,72 +258,66 @@ function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; sel
             </div>
           </motion.div>
         ) : !isLocked ? (
-          <span className="text-white/20 text-xs">{index + 1}</span>
+          <span className="num text-[15px] text-white/20">{index + 1}</span>
         ) : null}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
-export function PipelineBoard({ selectedUuid, onSlotClick }: { selectedUuid?: string | null; onSlotClick?: (slot: number) => void } = {}) {
+// ============================== 战斗控制台 ==============================
+
+export function PipelineBoard({
+  selectedUuid,
+  onSlotClick,
+  onExecute,
+  onNextTurn,
+}: {
+  selectedUuid?: string | null;
+  onSlotClick?: (slot: number) => void;
+  onExecute?: () => void;
+  onNextTurn?: () => void;
+} = {}) {
   const phase = useGameStore((s) => s.phase);
   const executionLog = useGameStore((s) => s.executionLog);
-  const lastExecutionResult = useGameStore((s) => s.lastExecutionResult);
   const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
-  const dismissExecutionSummary = useGameStore((s) => s.dismissExecutionSummary);
-  const nextTurn = useGameStore((s) => s.nextTurn);
   const pipelineSlots = useGameStore((s) => s.pipelineSlots);
   const turnSummary = useGameStore((s) => s.turnSummary);
   const slotLinks = useGameStore((s) => s.slotLinks);
+  const pipeline = useGameStore((s) => s.pipeline);
 
-  const handleDismissSummary = () => {
-    if (phase !== 'VICTORY' && phase !== 'DEFEAT') {
-      nextTurn();
-    }
-    dismissExecutionSummary();
-  };
+  const logRef = useRef<HTMLDivElement>(null);
+  const hasCards = pipeline.some((c) => c !== null);
 
-  // 阶段显示文案
+  // 日志自动滚动到底
+  useEffect(() => {
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [executionLog.length]);
+
+  const isExecuting = phase === 'EXECUTE_PHASE1' || phase === 'EXECUTE_PHASE2';
+  const showSummary = showExecutionSummary && phase === 'EXECUTE_PHASE3' && !!turnSummary;
+  const shouldShake = showSummary && turnSummary && (turnSummary.hpLoss > 0 || turnSummary.totalDamage > 0);
+
   const phaseLabel =
-    phase === 'EXECUTE_PHASE1' ? '⚡ 管道执行中...' :
-    phase === 'EXECUTE_PHASE2' ? '⚔ 敌方攻击中...' :
-    phase === 'EXECUTE_PHASE3' ? '📊 结算中...' :
-    null;
-
-  // 是否触发震动（玩家或怪物受伤）
-  const shouldShake = showExecutionSummary && phase === 'EXECUTE_PHASE3' && turnSummary &&
-    (turnSummary.hpLoss > 0 || turnSummary.totalDamage > 0);
+    phase === 'EXECUTE_PHASE1' ? '管道执行中' : phase === 'EXECUTE_PHASE2' ? '敌方攻击中' : phase === 'EXECUTE_PHASE3' ? '结算完成' : null;
 
   return (
     <motion.div
-      className="flex flex-col items-center gap-3 py-3 px-4 w-full"
-      animate={shouldShake ? {
-        x: [0, -10, 10, -10, 10, 0],
-        transition: { duration: 0.5 },
-      } : {}}
+      className="mx-auto w-fit max-w-full px-4"
+      animate={shouldShake ? { x: [0, -8, 8, -6, 6, 0], transition: { duration: 0.45 } } : {}}
     >
-      {/* 毛玻璃托盘背景 - 覆盖槽位区域 */}
-      <div className="relative">
-        <div
-          className="absolute inset-0 rounded-2xl"
-          style={{
-            backgroundColor: 'rgba(13, 17, 27, 0.82)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            margin: '-10px -16px -6px -16px',
-            padding: '10px 16px 6px 16px',
-          }}
-        />
-        {/* 动态槽位 */}
-        <div className="flex items-center gap-2 relative z-10">
+      <div className="panel relative px-5 pt-4 pb-3">
+        {/* ===== 槽位行 ===== */}
+        <div className="relative flex items-center justify-center gap-2.5">
           {Array.from({ length: pipelineSlots }).map((_, i) => (
             <div key={i} className="flex items-center">
               <PipelineSlot index={i} selectedUuid={selectedUuid} onSlotClick={onSlotClick} />
               {i < pipelineSlots - 1 && (
                 <motion.span
-                  className="text-white/30 mx-1 text-lg"
-                  animate={phase === 'EXECUTE_PHASE1' ? { color: ['#ffffff30', '#facc15', '#ffffff30'] } : {}}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                  className="mx-1 text-[13px] text-[var(--text-muted)]"
+                  animate={phase === 'EXECUTE_PHASE1' ? { color: ['#4a5468', '#d4a95c', '#4a5468'] } : {}}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.14 }}
                 >
                   →
                 </motion.span>
@@ -483,76 +325,96 @@ export function PipelineBoard({ selectedUuid, onSlotClick }: { selectedUuid?: st
             </div>
           ))}
 
-          {/* 闪电链接特效 - 只在 PLAY 阶段且槽位放满时显示 */}
-          {phase === 'PLAY' && slotLinks.length > 0 && (
-            <LightningLinkLayer links={slotLinks} />
+          {/* 执行按钮：与槽位同行右置 */}
+          {phase === 'PLAY' && (
+            <button
+              onClick={onExecute}
+              disabled={!hasCards}
+              className={`btn btn-danger ml-5 shrink-0 ${hasCards ? '' : 'btn-secondary'}`}
+              style={{ height: 48, letterSpacing: '0.3em', textIndent: '0.3em' }}
+            >
+              执行结算
+            </button>
           )}
         </div>
-      </div>
 
-      {/* 阶段指示器 */}
-      {phaseLabel && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-sm font-bold text-yellow-300/80 text-shadow"
-        >
-          {phaseLabel}
-        </motion.div>
-      )}
-
-      {/* 结算日志 */}
-      <AnimatePresence>
-        {executionLog.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="flex flex-wrap gap-2 justify-center max-w-full"
-          >
-            {executionLog.map((log, i) => (
-              <motion.span
-                key={`${i}-${log}`}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: Math.min(i * 0.05, 0.4) }}
-                className="text-xs px-2 py-1 rounded-full bg-black/40 text-amber-200"
-              >
-                {log}
-              </motion.span>
-            ))}
-          </motion.div>
+        {/* 闪电链接 */}
+        {phase === 'PLAY' && slotLinks.length > 0 && (
+          <div className="absolute inset-x-5 top-4 h-40 pointer-events-none">
+            <LightningLinkLayer links={slotLinks} />
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* 回合总结 - 点击后继续 */}
-      {phase === 'EXECUTE_PHASE3' && showExecutionSummary && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-center cursor-pointer hover:bg-white/5 rounded-lg p-2 transition-colors"
-          onClick={handleDismissSummary}
-        >
-          {/* 第一行：伤害计算结果 */}
-          {lastExecutionResult && (
-            <div className="flex items-center justify-center gap-4 mb-1">
-              <span className="text-red-400 font-bold text-shadow">总伤害: {lastExecutionResult.accumulatedDamage}</span>
-              {lastExecutionResult.accumulatedArmor > 0 && (
-                <span className="text-blue-400 font-bold text-shadow">总护甲: {lastExecutionResult.accumulatedArmor}</span>
-              )}
+        {/* ===== 日志 / 结算区 ===== */}
+        <div className="mt-3 border-t border-[var(--line)] pt-2">
+          {/* 日志主体：固定高度，逐行，自动滚底 */}
+          <div ref={logRef} className="h-[72px] overflow-y-auto pr-1 flex flex-col gap-[3px]">
+            {executionLog.length === 0 && !isExecuting && !showSummary && (
+              <div className="text-[12px] text-[var(--text-muted)] tracking-[0.12em] py-1">
+                {phase === 'PLAY'
+                  ? selectedUuid
+                    ? '点击上方发光的空槽位，放置选中的卡牌'
+                    : '将卡牌置入序列槽 · 修饰牌放左侧强化右侧 · 敌方将攻击红边标记的槽位'
+                  : ''}
+              </div>
+            )}
+            {executionLog.map((log, i) => (
+              <div key={`${i}-${log}`} className="text-[12.5px] leading-[1.5] text-[var(--text-secondary)] num">
+                {log}
+              </div>
+            ))}
+          </div>
+
+          {/* 阶段指示 */}
+          {phaseLabel && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold-400)] animate-pulse" />
+              <span className="text-[12px] font-bold text-[var(--gold-300)] tracking-[0.2em]">{phaseLabel}</span>
             </div>
           )}
-          {/* 第二行：护盾和扣血总结 */}
-          <TurnSummaryDisplay />
-          <div className="text-white/40 text-xs mt-1 text-shadow-sm">点击进入下一回合</div>
-        </motion.div>
-      )}
 
-      {/* 伤害特效 */}
-      <AnimatePresence>
-        <DamageEffects />
-      </AnimatePresence>
-
+          {/* 结算摘要行 */}
+          <AnimatePresence>
+            {showSummary && turnSummary && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between gap-4 flex-wrap"
+              >
+                <div className="flex items-center gap-4 flex-wrap text-[13px]">
+                  <span className="text-[var(--text-secondary)]">
+                    总伤害 <span className="num text-[15px] font-black text-[#f0a49e]">{turnSummary.totalDamage}</span>
+                  </span>
+                  {turnSummary.totalArmor > 0 && (
+                    <span className="text-[var(--text-secondary)]">
+                      护盾 <span className="num text-[15px] font-black text-[#8fb8e0]">{turnSummary.effectiveArmor}</span>
+                      {turnSummary.totalArmor !== turnSummary.effectiveArmor && (
+                        <span className="num text-[11px] text-[var(--text-muted)]">/{turnSummary.totalArmor}</span>
+                      )}
+                    </span>
+                  )}
+                  {turnSummary.hpLoss > 0 && (
+                    <span className="text-[var(--text-secondary)]">
+                      扣血 <span className="num text-[15px] font-black text-[#e88a84]">{turnSummary.hpLoss}</span>
+                    </span>
+                  )}
+                  {turnSummary.riposteDamage > 0 && (
+                    <span className="text-[var(--text-secondary)]">
+                      反击 <span className="num text-[15px] font-black text-[#f0b46a]">+{turnSummary.riposteDamage}</span>
+                    </span>
+                  )}
+                  {turnSummary.overdrive && (
+                    <span className="text-[12px] font-black text-[var(--gold-300)] tracking-[0.2em] animate-pulse">⚡ OVERDRIVE</span>
+                  )}
+                </div>
+                <button onClick={onNextTurn} className="btn btn-primary shrink-0" style={{ height: 34, fontSize: 13 }}>
+                  下一回合
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
     </motion.div>
   );
 }
