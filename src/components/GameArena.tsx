@@ -76,6 +76,10 @@ export function GameArena() {
   const characterRef = useRef<HTMLDivElement>(null);
   const skillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const difficulty = useRunStore((s) => s.difficulty);
+  const comboCount = useGameStore((s) => s.comboCount);
+  const overdriveFlash = useGameStore((s) => s.overdriveFlash);
+
   // gameStore.pipeline 在 initBattle 后才有长度，用它作为战斗就绪的派生信号（避免 effect 内 setState）
   const battleReady = useGameStore((s) => s.pipeline.length > 0);
 
@@ -87,10 +91,10 @@ export function GameArena() {
   useEffect(() => {
     const node = getCurrentMapNode();
     if (node) {
-      const battleEnemy = getEnemyForNode(node, pipelineSlots);
+      const battleEnemy = getEnemyForNode(node, pipelineSlots, difficulty);
       initBattle(battleEnemy);
     }
-  }, [initBattle, pipelineSlots]);
+  }, [initBattle, pipelineSlots, difficulty]);
 
   // 点击角色区域以外时收起技能浮层（不阻挡战场其他操作）
   useEffect(() => {
@@ -158,6 +162,7 @@ export function GameArena() {
       totalArmor: battleStats.totalArmor,
       effectiveArmor: battleStats.effectiveArmor,
       enemyName: enemy.name,
+      isElite: enemy.isElite ?? false,
     });
   };
 
@@ -234,6 +239,48 @@ export function GameArena() {
             >
               跳过 ⏭
             </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* 连击计数器（执行阶段显示） */}
+        <AnimatePresence>
+          {isExecuting && comboCount >= 2 && (
+            <motion.div
+              key={'combo-' + comboCount}
+              initial={{ scale: 1.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className='absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none'
+            >
+              <span
+                className='font-black text-4xl'
+                style={{
+                  color: comboCount >= 5 ? '#fcd34d' : '#f97316',
+                  textShadow: '0 0 20px currentColor, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+                }}
+              >
+                {comboCount} 连击!
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 过载特效 */}
+        <AnimatePresence>
+          {overdriveFlash && (
+            <motion.div
+              key='overdrive'
+              initial={{ opacity: 0.9, scale: 0.6 }}
+              animate={{ opacity: 0, scale: 1.6 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9 }}
+              className='absolute inset-0 z-40 pointer-events-none'
+              style={{
+                background: 'radial-gradient(circle at 50% 40%, rgba(250,204,21,0.55), transparent 55%)',
+                border: '4px solid rgba(250,204,21,0.7)',
+                borderRadius: '24px',
+              }}
+            />
           )}
         </AnimatePresence>
 

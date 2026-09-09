@@ -11,16 +11,18 @@ import type {
   PlayerClass,
   RelicId,
   EventReward,
+  Difficulty,
 } from '../types';
 import {
   MapNodeType,
   CLASS_MAX_MP,
   RELICS,
   EventRewardType,
+
 } from '../types';
-import { buildStarterDeck, generateRewardCards, generateShopItems } from '../data/cardData';
+import { buildStarterDeck, generateRewardCards, generateShopItems, upgradeCard } from '../data/cardData';
 import { generateGameMap } from '../data/mapData';
-import { PLAYER, REWARD, REST, EVENT, DECK, PIPELINE } from '../config/balance';
+import { PLAYER, REWARD, SHOP, REST, EVENT, DECK, PIPELINE } from '../config/balance';
 
 // 事件奖励节点的固定三选一选项
 function buildEventRewards(): EventReward[] {
@@ -53,6 +55,9 @@ interface RunState {
   /** 本局显式结局（替代场景推断） */
   runResult: 'VICTORY' | 'DEFEAT' | null;
 
+  // 难度
+  difficulty: Difficulty;
+
   // 玩家信息
   playerProfile: PlayerProfile | null;
 
@@ -76,6 +81,8 @@ interface RunState {
 
   // 商店
   shopItems: ShopItem[];
+  /** 本局已删卡次数（价格递增） */
+  removeCardCount: number;
 
   // 休息选择
   showRestChoice: boolean;
@@ -97,16 +104,22 @@ interface RunState {
 
   // Actions
   setPlayerProfile: (name: string, playerClass: PlayerClass) => void;
+  setDifficulty: (difficulty: Difficulty) => void;
   startNewRun: (profile?: PlayerProfile) => void;
   selectMapNode: (nodeId: string) => void;
-  onBattleVictory: (remainingHp: number, battleStats?: { totalDamage: number; totalArmor: number; effectiveArmor: number; enemyName: string }) => void;
+  onBattleVictory: (remainingHp: number, battleStats?: { totalDamage: number; totalArmor: number; effectiveArmor: number; enemyName: string; isElite?: boolean; grantRelic?: boolean }) => void;
   onBattleDefeat: () => void;
   collectRewardCard: (templateId: string) => void;
   collectBonusSlot: () => void;
   skipReward: () => void;
   proceedToMap: () => void;
   buyCard: (itemId: string) => void;
+  /** 当前删卡价格（递增） */
+  currentRemoveCost: () => number;
   removeCard: (deckIndex: number) => void;
+  /** 锻造：升级卡组中指定索引的卡 */
+  upgradeCardAt: (deckIndex: number) => void;
+  finishRest: () => void;
   restHealHp: () => void;
   restRestoreMp: () => void;
   spendSkillMp: () => void;
@@ -129,6 +142,7 @@ export const useRunStore = create<RunState>()(
     scene: 'TITLE',
     runActive: false,
     runResult: null,
+    difficulty: 'NORMAL' as Difficulty,
     playerProfile: null,
     gold: PLAYER.INITIAL_GOLD,
     playerMaxHp: PLAYER.MAX_HP,
@@ -143,6 +157,7 @@ export const useRunStore = create<RunState>()(
     pendingReward: null,
     rewardCardCollected: false,
     shopItems: [],
+    removeCardCount: 0,
     showRestChoice: false,
     relics: [],
     pendingEventRewards: null,
@@ -161,6 +176,12 @@ export const useRunStore = create<RunState>()(
           name,
           class: playerClass,
         };
+      });
+    },
+
+    setDifficulty: (difficulty: Difficulty) => {
+      set((state) => {
+        state.difficulty = difficulty;
       });
     },
 
@@ -202,6 +223,7 @@ export const useRunStore = create<RunState>()(
         state.pendingReward = null;
         state.rewardCardCollected = false;
         state.shopItems = [];
+        state.removeCardCount = 0;
         state.showRestChoice = false;
         // 跨局状态彻底重置
         state.relics = [];
@@ -270,6 +292,7 @@ export const useRunStore = create<RunState>()(
         // 根据节点类型切换场景
         switch (targetNode!.type) {
           case MapNodeType.BATTLE:
+          case MapNodeType.ELITE:
           case MapNodeType.BOSS:
             state.scene = 'BATTLE';
             break;
@@ -291,18 +314,27 @@ export const useRunStore = create<RunState>()(
       });
     },
 
-    onBattleVictory: (remainingHp: number, battleStats?: { totalDamage: number; totalArmor: number; effectiveArmor: number; enemyName: string }) => {
+    onBattleVictory: (remainingHp: number, battleStats?: { totalDamage: number; totalArmor: number; effectiveArmor: number; enemyName: string; isElite?: boolean; grantRelic?: boolean }) => {
       // 防重复：仅当仍处于战斗场景时结算（快速双击/竞态保护）
       if (get().scene !== 'BATTLE') return;
 
-      // 生成两轮卡牌奖励
-      const round1Cards = generateRewardCards(3);
-      const round2Cards = generateRewardCards(3);
+      const { difficulty, pipelineSlots } = get();
+      const isElite = battleStats?.isElite ?? false;
+      const rareOdds = difficulty === 'ELITE'
+        ? REWARD.ELITE_DIFF_RARITY_RARE
+        : REWARD.RARITY_ODDS.RARE;
+
+      // 生成两轮卡牌奖励（精英：每轮保底 1 稀有）
+      const round1Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds });
+      const round2Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds });
+
+      let gold = REWARD.GOLD_MIN + Math.floor(Math.random() * REWARD.GOLD_VARIANCE);
+      if (isElite) gold += REWARD.ELITE_GOLD_BONUS;
 
       const reward: RewardChoice = {
-        cards: round1Cards, // 第一轮显示的卡牌
-        gold: REWARD.GOLD_MIN + Math.floor(Math.random() * REWARD.GOLD_VARIANCE),
-        bonusSlot: Math.random() < REWARD.BONUS_SLOT_CHANCE && get().pipelineSlots < PIPELINE.MAX_SLOTS,
+        cards: round1Cards,
+        gold,
+        bonusSlot: Math.random() < (isElite ? 0.35 : REWARD.BONUS_SLOT_CHANCE) && pipelineSlots < PIPELINE.MAX_SLOTS,
         currentRound: 1,
         totalRounds: 2,
         allCards: [round1Cards, round2Cards],
@@ -313,6 +345,15 @@ export const useRunStore = create<RunState>()(
         state.pendingReward = reward;
         state.rewardCardCollected = false;
         state.scene = 'REWARD';
+
+        // 精英：必掉未持有遗物
+        if (isElite || battleStats?.grantRelic) {
+          const allRelicIds = Object.keys(RELICS) as RelicId[];
+          const available = allRelicIds.filter((id) => !state.relics.includes(id));
+          if (available.length > 0) {
+            state.relics.push(available[Math.floor(Math.random() * available.length)]);
+          }
+        }
 
         if (battleStats) {
           state.gameStats.totalDamage += battleStats.totalDamage;
@@ -369,16 +410,16 @@ export const useRunStore = create<RunState>()(
     skipReward: () => {
       set((state) => {
         if (!state.pendingReward) return;
-        
+
+        // 跳过补偿：对冲"必须拿卡"的负反馈
+        state.gold += REWARD.SKIP_COMPENSATION_GOLD;
+
         // 检查是否还有下一轮
         if (state.pendingReward.currentRound < state.pendingReward.totalRounds) {
-          // 进入下一轮
           state.pendingReward.currentRound += 1;
           state.pendingReward.cards = state.pendingReward.allCards[state.pendingReward.currentRound - 1];
-          // 重置选择状态
           state.rewardCardCollected = false;
         } else {
-          // 所有轮次完成
           state.rewardCardCollected = true;
         }
       });
@@ -416,16 +457,43 @@ export const useRunStore = create<RunState>()(
       });
     },
 
-    // 按牌组索引移除卡牌（商店删卡），带最小卡组保护
+    /** 当前删卡价格（随次数递增，有上限） */
+    currentRemoveCost: () => {
+      const count = get().removeCardCount;
+      return Math.min(
+        SHOP.REMOVE_CARD_BASE_COST + count * SHOP.REMOVE_CARD_COST_STEP,
+        SHOP.REMOVE_CARD_COST_MAX,
+      );
+    },
+
     removeCard: (deckIndex: number) => {
       set((state) => {
-        const removeItem = state.shopItems.find((i) => i.type === 'REMOVE_CARD');
-        if (!removeItem) return;
-        if (state.gold < removeItem.cost) return;
+        const cost = Math.min(
+          SHOP.REMOVE_CARD_BASE_COST + state.removeCardCount * SHOP.REMOVE_CARD_COST_STEP,
+          SHOP.REMOVE_CARD_COST_MAX,
+        );
+        if (state.gold < cost) return;
         if (state.masterDeck.length <= DECK.MIN_SIZE) return;
         if (deckIndex < 0 || deckIndex >= state.masterDeck.length) return;
-        state.gold -= removeItem.cost;
+        state.gold -= cost;
+        state.removeCardCount += 1;
         state.masterDeck.splice(deckIndex, 1);
+      });
+    },
+
+    upgradeCardAt: (deckIndex: number) => {
+      set((state) => {
+        if (deckIndex < 0 || deckIndex >= state.masterDeck.length) return;
+        const target = state.masterDeck[deckIndex];
+        if (target.upgraded) return; // 每张卡只能锻造一次
+        state.masterDeck[deckIndex] = upgradeCard(target);
+      });
+    },
+
+    finishRest: () => {
+      set((state) => {
+        state.showRestChoice = false;
+        state.scene = 'MAP';
       });
     },
 

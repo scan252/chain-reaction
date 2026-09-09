@@ -10,7 +10,8 @@ const NODE_EMOJI: Record<string, string> = {
   [MapNodeType.SHOP]: '🛒',
   [MapNodeType.REST]: '🏕️',
   [MapNodeType.REWARD]: '🎁',
-  [MapNodeType.BOSS]: '💀',
+  [MapNodeType.ELITE]: '💀',
+  [MapNodeType.BOSS]: '👑',
 };
 
 const NODE_LABEL: Record<string, string> = {
@@ -18,6 +19,7 @@ const NODE_LABEL: Record<string, string> = {
   [MapNodeType.SHOP]: '商店',
   [MapNodeType.REST]: '休息',
   [MapNodeType.REWARD]: '奖励',
+  [MapNodeType.ELITE]: '精英',
   [MapNodeType.BOSS]: 'BOSS',
 };
 
@@ -26,11 +28,12 @@ const NODE_COLOR: Record<string, string> = {
   [MapNodeType.SHOP]: '#eab308',
   [MapNodeType.REST]: '#22c55e',
   [MapNodeType.REWARD]: '#f97316',
+  [MapNodeType.ELITE]: '#f59e0b',
   [MapNodeType.BOSS]: '#a855f7',
 };
 
 // 吉祥物首次点击对话
-const FIRST_CLICK_DIALOGUE = "此版本为demo版本，仅作基础功能演示，部分设计未实装，若对卡牌设计感兴趣详情查看卡牌配置表";
+const FIRST_CLICK_DIALOGUE = "欢迎回来，冒险者！排好你的卡牌序列——修饰牌放左边，连锁会越滚越大。祝你好运~";
 
 // 吉祥物常规对话列表（随机显示）
 const MASCOT_DIALOGUES = [

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
-import type { PlayerClass } from '../types';
+import type { PlayerClass, Difficulty } from '../types';
 import { CLASS_MAX_MP } from '../types';
 
 const CLASS_INFO: Record<PlayerClass, { name: string; icon: string; description: string; skill: string; image?: string }> = {
@@ -21,6 +21,19 @@ const CLASS_INFO: Record<PlayerClass, { name: string; icon: string; description:
   },
 };
 
+const DIFFICULTY_INFO: Record<Difficulty, { name: string; icon: string; description: string }> = {
+  NORMAL: {
+    name: '标准',
+    icon: '🌿',
+    description: '经典冒险难度，适合初次游玩',
+  },
+  ELITE: {
+    name: '精英',
+    icon: '💀',
+    description: '敌人 +25% 生命 / +15% 攻击，稀有卡掉率提升',
+  },
+};
+
 interface PlayerCreationProps {
   onStartGame?: () => void;
 }
@@ -28,19 +41,17 @@ interface PlayerCreationProps {
 export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
   const [playerName, setPlayerName] = useState('');
   const [selectedClass, setSelectedClass] = useState<PlayerClass | null>(null);
+  const [difficulty, setDifficulty] = useState<Difficulty>('NORMAL');
   const setPlayerProfile = useRunStore((s) => s.setPlayerProfile);
+  const setDifficultyAction = useRunStore((s) => s.setDifficulty);
   const goToNpcHelp = useRunStore((s) => s.goToNpcHelp);
 
   const handleStart = () => {
     if (!playerName.trim() || !selectedClass) return;
-    
-    // 只设置玩家信息，不开始游戏（游戏在NPC帮助页面后开始）
+
+    setDifficultyAction(difficulty);
     setPlayerProfile(playerName.trim(), selectedClass);
-    
-    // 切换到NPC帮助场景
     goToNpcHelp();
-    
-    // 通知父组件
     onStartGame?.();
   };
 
@@ -118,6 +129,41 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
                   </div>
                   <p className="text-white/50 text-base mb-1">{info.description}</p>
                   <p className="text-white/40 text-sm">{info.skill}</p>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* 难度选择 */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.35 }}
+        className="w-full max-w-lg mb-8"
+      >
+        <label className="block text-white/60 text-lg mb-3">选择难度</label>
+        <div className="grid grid-cols-2 gap-3">
+          {(Object.keys(DIFFICULTY_INFO) as Difficulty[]).map((diff) => {
+            const info = DIFFICULTY_INFO[diff];
+            const isSelected = difficulty === diff;
+            return (
+              <motion.button
+                key={diff}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setDifficulty(diff)}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                  isSelected
+                    ? 'bg-red-500/20 border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.25)]'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <span className="text-2xl">{info.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-bold">{info.name}</div>
+                  <div className="text-white/40 text-xs">{info.description}</div>
                 </div>
               </motion.button>
             );

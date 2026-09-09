@@ -5,6 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { StatusEffectType } from '../types';
 import type { SlotPreview, SlotLink } from '../types';
+import { JUICE } from '../config/balance';
 
 // --- 闪电链接容器：按实际 DOM 位置绘制链接，避免硬编码宽度误差 ---
 function LightningLinkLayer({ links }: { links: SlotLink[] }) {
@@ -127,6 +128,44 @@ function TurnSummaryDisplay() {
   );
 }
 
+// 伤害分级配色（爽点层：数字越大越炸裂）
+function damageTierStyle(dmg: number): { color: string; shadow: string; fontSize: string } {
+  const [T1, T2, T3, T4] = JUICE.DAMAGE_TIERS;
+  if (dmg >= T4) {
+    return {
+      color: '#f0abfc',
+      shadow: '0 0 30px rgba(240,171,252,0.9), 0 0 60px rgba(217,70,239,0.6), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+      fontSize: '5rem',
+    };
+  }
+  if (dmg >= T3) {
+    return {
+      color: '#ef4444',
+      shadow: '0 0 30px rgba(239,68,68,0.9), 0 0 60px rgba(239,68,68,0.5), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+      fontSize: '4.5rem',
+    };
+  }
+  if (dmg >= T2) {
+    return {
+      color: '#fb923c',
+      shadow: '0 0 24px rgba(249,115,22,0.8), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+      fontSize: '4rem',
+    };
+  }
+  if (dmg >= T1) {
+    return {
+      color: '#facc15',
+      shadow: '0 0 20px rgba(250,204,21,0.8), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+      fontSize: '3.5rem',
+    };
+  }
+  return {
+    color: '#e5e7eb',
+    shadow: '0 0 12px rgba(229,231,235,0.6), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+    fontSize: '3rem',
+  };
+}
+
 // 伤害特效组件
 function DamageEffects() {
   const turnSummary = useGameStore((s) => s.turnSummary);
@@ -138,6 +177,8 @@ function DamageEffects() {
   if (!showExecutionSummary || !shouldShowDamage || !turnSummary) {
     return null;
   }
+
+  const tier = damageTierStyle(turnSummary.totalDamage);
 
   return (
     <>
@@ -151,9 +192,10 @@ function DamageEffects() {
           className="fixed left-1/4 top-1/2 z-50 pointer-events-none"
         >
           <div
-            className="text-6xl font-black text-red-500 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]"
+            className="font-black text-red-500"
             style={{
-              textShadow: '0 0 30px rgba(239,68,68,0.8), 0 0 60px rgba(239,68,68,0.5)',
+              fontSize: '3.5rem',
+              textShadow: '0 0 30px rgba(239,68,68,0.8), 0 0 60px rgba(239,68,68,0.5), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
               WebkitTextStroke: '2px white',
             }}
           >
@@ -162,24 +204,34 @@ function DamageEffects() {
         </motion.div>
       )}
 
-      {/* 怪物受伤特效 */}
+      {/* 怪物受伤特效（分级变色） */}
       {turnSummary.totalDamage > 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.5, x: 100 }}
           animate={{ opacity: 1, scale: 1.2, x: 150 }}
           exit={{ opacity: 0, y: -50 }}
           transition={{ duration: 0.5, type: 'spring', delay: 0.1 }}
-          className="fixed right-1/4 top-1/2 z-50 pointer-events-none"
+          className="fixed right-1/4 top-1/2 z-50 pointer-events-none flex flex-col items-center"
         >
-          <div
-            className="text-6xl font-black text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
-            style={{
-              textShadow: '0 0 30px rgba(249,115,22,0.8), 0 0 60px rgba(249,115,22,0.5)',
-              WebkitTextStroke: '2px white',
-            }}
-          >
+          <div className="font-black" style={{ color: tier.color, fontSize: tier.fontSize, textShadow: tier.shadow }}>
             -{turnSummary.totalDamage}
           </div>
+          {turnSummary.overdrive && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: [1, 1.25, 1] }}
+              transition={{ duration: 0.8, repeat: 2 }}
+              className="font-black text-2xl mt-1"
+              style={{ color: '#fde047', textShadow: '0 0 20px #fde047, -2px -2px 0 #000, 2px 2px 0 #000' }}
+            >
+              ⚡ OVERDRIVE ⚡
+            </motion.div>
+          )}
+          {turnSummary.riposteDamage > 0 && (
+            <div className="font-bold text-xl mt-1" style={{ color: '#fb923c', textShadow: '0 0 12px #fb923c, -2px -2px 0 #000, 2px 2px 0 #000' }}>
+              反! +{turnSummary.riposteDamage}
+            </div>
+          )}
         </motion.div>
       )}
     </>
@@ -245,6 +297,7 @@ function PipelineSlot({ index }: { index: number }) {
 
   const isLocked = slotStatus?.isLocked ?? false;
   const isBurning = slotStatus?.statusEffects.some((e) => e.type === StatusEffectType.BURNING) ?? false;
+  const isIgnited = slotStatus?.statusEffects.some((e) => e.type === StatusEffectType.IGNITED) ?? false;
   const isAttackTarget = intent.attacks.some((a) => a.slotIndex === index);
   const preview = slotPreviews.find((p) => p.slotIndex === index);
 
@@ -303,6 +356,18 @@ function PipelineSlot({ index }: { index: number }) {
         <div className="absolute inset-0 rounded-xl bg-purple-900/30 flex items-center justify-center z-10">
           <span className="text-2xl">🔒</span>
         </div>
+      )}
+
+      {/* 焦土点燃指示器 */}
+      {isIgnited && !isLocked && (
+        <motion.div
+          className="absolute -top-2 left-0 text-sm"
+          animate={{ scale: [1, 1.25, 1], rotate: [0, 8, -8, 0] }}
+          transition={{ duration: 0.9, repeat: Infinity }}
+          title="焦土：此槽卡牌数值 +100%"
+        >
+          🔥✚
+        </motion.div>
       )}
 
       {/* 燃烧指示器 */}

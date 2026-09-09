@@ -67,18 +67,19 @@ export function BuffDisplay() {
   const vulnerableStacks = playerStatusEffects
     .filter((e) => e.type === StatusEffectType.VULNERABLE)
     .reduce((sum, e) => sum + e.stacks, 0);
+  const weakened = playerStatusEffects.some((e) => e.type === StatusEffectType.WEAKENED);
 
-  if (globalDamageBonus <= 0 && vulnerableStacks <= 0) return null;
+  if (globalDamageBonus <= 0 && vulnerableStacks <= 0 && !weakened) return null;
 
   return (
     <div className="flex flex-col items-center gap-1 mt-2">
       <div className="text-white/40 text-[10px] text-shadow-sm">增益/减益</div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap justify-center">
         {globalDamageBonus > 0 && (
           <StatusIcon
             icon="+"
             value={globalDamageBonus}
-            name="共鸣增幅"
+            name="全场强化"
             description={`所有动作牌基础数值 +${globalDamageBonus}`}
             tone="buff"
           />
@@ -89,6 +90,15 @@ export function BuffDisplay() {
             value={`x${vulnerableStacks}`}
             name={`破绽 (${vulnerableStacks} 层)`}
             description={`受到的攻击伤害 +${Math.round(STATUS.VULNERABLE_DAMAGE_AMP_PER_STACK * vulnerableStacks * 100)}%`}
+            tone="debuff"
+          />
+        )}
+        {weakened && (
+          <StatusIcon
+            icon="🌀"
+            value="-25%"
+            name="衰弱"
+            description="本回合卡牌数值 -25%"
             tone="debuff"
           />
         )}
