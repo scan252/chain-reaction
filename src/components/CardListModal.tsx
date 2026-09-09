@@ -46,9 +46,9 @@ export function CardListModal({ isOpen, onClose, title, cards }: CardListModalPr
             {/* 卡牌网格 */}
             <div className="overflow-y-auto flex-1 pr-1">
               {cards.length === 0 ? (
-                <div className="text-white/30 text-center py-8">空</div>
+                <div className="text-white/30 text-center py-8">暂无卡牌</div>
               ) : (
-                <div className="grid grid-cols-4 gap-3 justify-items-center">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 justify-items-center">
                   {cards.map((card) => (
                     <Card key={card.uuid} card={card} size="sm" />
                   ))}

@@ -14,7 +14,7 @@ function getSpecialIcon(effectId: string): string | null {
   switch (effectId) {
     case 'PHASE_SHIFT': return '→';
     case 'MIRROR_REFLECT': return '⟐';
-    case 'RESONANCE_AMP': return '≋';
+    case 'RESONANCE_AMP_V2': return '≋';
     case 'DESPERATE_STRIKE': return '!';
     case 'CHAIN_DEFENSE': return '⊞';
     default: return null;
@@ -24,7 +24,7 @@ function getSpecialIcon(effectId: string): string | null {
 function getDisplayValue(card: CardInstance): string {
   const isModifier = card.type === CardType.MODIFIER;
   // 共鸣增幅显示 x2 而非 0
-  if (card.effectId === 'RESONANCE_AMP') return 'x2';
+  if (card.effectId === 'RESONANCE_AMP_V2') return 'x2';
   // 背水一战显示 ?
   if (card.effectId === 'DESPERATE_STRIKE') return '?';
   // 连锁防线显示盾牌
@@ -88,9 +88,9 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
         </div>
       )}
       
-      {/* 全局伤害加成标记 */}
+      {/* 全局伤害加成标记（左上角，避免与特殊图标角标重叠） */}
       {!isModifier && damageBonus > 0 && (
-        <div className="absolute top-1 right-1 text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center bg-green-500/80 text-white border border-green-400/50">
+        <div className="absolute top-1 left-1 text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center bg-green-500/80 text-white border border-green-400/50">
           +{damageBonus}
         </div>
       )}

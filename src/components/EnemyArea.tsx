@@ -19,13 +19,13 @@ export function EnemyArea() {
   const hpPercent = (enemy.currentHp / enemy.maxHp) * 100;
 
   const isAttacking = phase === 'EXECUTE_PHASE2';
-  // Boss 判断：血量上限 >= 100 视为 Boss
-  const isBoss = enemy.maxHp >= 100;
+  // Boss 由节点类型显式标记
+  const isBoss = enemy.isBoss ?? false;
 
   return (
-    <div className="flex flex-col items-center gap-2 py-3">
-      {/* 血量条 - Boss 时加长一倍 */}
-      <div className={`${isBoss ? 'w-[864px]' : 'w-[432px]'} flex items-center gap-3 mb-4`}>
+    <div className="flex flex-col items-center gap-2 py-3 w-full px-4">
+      {/* 血量条 - Boss 时加长一倍（自适应窄屏） */}
+      <div className={`${isBoss ? 'max-w-[864px]' : 'max-w-[432px]'} w-full flex items-center gap-3 mb-4`}>
         <div className="flex-1 h-4 rounded-full bg-gray-800 border border-gray-700 overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-red-600"
@@ -60,7 +60,7 @@ export function EnemyArea() {
         )}
       </motion.div>
 
-      {/* Boss 名称 - 位于怪物图像上方 */}
+      {/* 敌人名称 - 位于怪物图像下方 */}
       <motion.h2
         className="text-lg font-bold text-red-400 tracking-wider mt-2 text-shadow-heavy"
         animate={isAttacking ? { scale: [1, 1.1, 1] } : {}}

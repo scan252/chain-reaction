@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { useRunStore } from './store/runStore';
-import type { SceneType } from './types';
 import { GameArena } from './components/GameArena';
 import { MapScreen } from './components/MapScreen';
 import { RewardScreen } from './components/RewardScreen';
@@ -76,18 +75,8 @@ function TitleScreen({ onCreateCharacter }: TitleScreenProps) {
 function App() {
   const scene = useRunStore((s) => s.scene);
   const showRestChoice = useRunStore((s) => s.showRestChoice);
-  // const playerProfile = useRunStore((s) => s.playerProfile);
+  const runResult = useRunStore((s) => s.runResult);
   const [showPlayerCreation, setShowPlayerCreation] = useState(false);
-  const lastSceneRef = useRef<SceneType>('TITLE');
-  
-  // 监听场景变化，记录进入 GAME_END 之前的场景
-  useEffect(() => {
-    if (scene === 'GAME_END') {
-      // 保持之前的场景记录不变
-    } else {
-      lastSceneRef.current = scene;
-    }
-  }, [scene]);
 
   // 当角色创建完成时，进入NPC帮助页面
   const handlePlayerCreated = () => {
@@ -216,7 +205,7 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <GameEndScreen isVictory={lastSceneRef.current !== 'BATTLE'} />
+          <GameEndScreen isVictory={runResult === 'VICTORY'} />
         </motion.div>
       )}
     </AnimatePresence>

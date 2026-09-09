@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { type CardTemplate, CardType, type RewardCard, type ShopItem, ShopItemType, REMOVE_CARD_COST } from '../types';
+import { type CardTemplate, CardType, type RewardCard, type ShopItem, ShopItemType } from '../types';
+import { SHOP } from '../config/balance';
 
 // rewardWeight 说明：
 //   数值越大，奖励三选一时出现概率越高
@@ -244,11 +245,11 @@ export function generateShopItems(): ShopItem[] {
   const pool = [...ALL_CARD_POOL];
   const items: ShopItem[] = [];
 
-  const cardCount = 4 + Math.floor(Math.random() * 2);
+  const cardCount = SHOP.CARD_COUNT_MIN + Math.floor(Math.random() * SHOP.CARD_COUNT_VARIANCE);
   for (let i = 0; i < cardCount && pool.length > 0; i++) {
     const idx = Math.floor(Math.random() * pool.length);
     const [card] = pool.splice(idx, 1);
-    const cost = 30 + Math.floor(Math.random() * 50);
+    const cost = SHOP.PRICE_MIN + Math.floor(Math.random() * SHOP.PRICE_VARIANCE);
     items.push({
       id: uuidv4(),
       type: ShopItemType.BUY_CARD,
@@ -260,7 +261,7 @@ export function generateShopItems(): ShopItem[] {
   items.push({
     id: uuidv4(),
     type: ShopItemType.REMOVE_CARD,
-    cost: REMOVE_CARD_COST,
+    cost: SHOP.REMOVE_CARD_COST,
   });
 
   return items;

@@ -50,7 +50,7 @@ export function RewardScreen() {
           <p className="text-white/60 text-sm mb-4">
             第 {pendingReward.currentRound} 轮 - 选择一张卡牌加入牌组：
           </p>
-          <div className="flex gap-6 mb-6">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 px-2">
             {pendingReward.cards.map((rc, i) => (
               <motion.div
                 key={rc.card.templateId}

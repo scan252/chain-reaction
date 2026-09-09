@@ -3,13 +3,11 @@ import { useRunStore } from '../store/runStore';
 import type { EventReward } from '../types';
 
 export function EventRewardScreen() {
-  const {
-    pendingEventRewards,
-    eventRewardCollected,
-    collectEventReward,
-    skipEventReward,
-    proceedToMap,
-  } = useRunStore();
+  const pendingEventRewards = useRunStore((s) => s.pendingEventRewards);
+  const eventRewardCollected = useRunStore((s) => s.eventRewardCollected);
+  const collectEventReward = useRunStore((s) => s.collectEventReward);
+  const skipEventReward = useRunStore((s) => s.skipEventReward);
+  const proceedToMap = useRunStore((s) => s.proceedToMap);
 
   const handleSelectReward = (rewardType: EventReward['type']) => {
     collectEventReward(rewardType);
@@ -37,7 +35,7 @@ export function EventRewardScreen() {
 
         {!eventRewardCollected ? (
           <>
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {pendingEventRewards.map((reward, index) => (
                 <motion.button
                   key={reward.type}

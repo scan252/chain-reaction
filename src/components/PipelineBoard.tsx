@@ -1,30 +1,69 @@
-import { useDroppable } from '@dnd-kit/core';
+import { useEffect, useRef, useState } from 'react';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-// import { useRunStore } from '../store/runStore';
 import { Card } from './Card';
 import { StatusEffectType } from '../types';
 import type { SlotPreview, SlotLink } from '../types';
 
-// 闪电链接特效组件
-function LightningLink({ from, to, type }: { from: number; to: number; type: SlotLink['type'] }) {
-  // 计算链接的位置
-  const slotWidth = 128; // w-32 = 128px
-  const gap = 8; // gap-2 = 8px
-  
-  // 从 from 槽位的右侧到 to 槽位的左侧
-  const fromX = from * (slotWidth + gap) + slotWidth;
-  const toX = to * (slotWidth + gap);
-  
-  // 确定方向（从左到右或从右到左）
-  const isForward = to > from;
-  const linkWidth = Math.abs(toX - fromX + (isForward ? 0 : slotWidth));
-  
-  // 根据类型确定颜色
+// --- 闪电链接容器：按实际 DOM 位置绘制链接，避免硬编码宽度误差 ---
+function LightningLinkLayer({ links }: { links: SlotLink[] }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [slotRects, setSlotRects] = useState<{ left: number; right: number; top: number; height: number }[]>([]);
+
+  useEffect(() => {
+    const measure = () => {
+      const row = rowRef.current;
+      if (!row) return;
+      const containerRect = row.getBoundingClientRect();
+      const rects = Array.from(row.querySelectorAll<HTMLElement>('[data-slot-index]')).map((el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          left: r.left - containerRect.left,
+          right: r.right - containerRect.left,
+          top: r.top - containerRect.top,
+          height: r.height,
+        };
+      });
+      setSlotRects(rects);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [links.length]);
+
+  if (slotRects.length === 0) return null;
+
+  return (
+    <div ref={rowRef} className="absolute inset-0 pointer-events-none z-20">
+      {links.map((link, index) => {
+        const from = slotRects[link.from];
+        const to = slotRects[link.to];
+        if (!from || !to) return null;
+        return <LightningLink key={`${link.from}-${link.to}-${index}`} from={from} to={to} type={link.type} />;
+      })}
+    </div>
+  );
+}
+
+// 闪电链接特效组件（基于测量到的槽位坐标）
+function LightningLink({
+  from,
+  to,
+  type,
+}: {
+  from: { left: number; right: number; top: number; height: number };
+  to: { left: number; right: number; top: number; height: number };
+  type: SlotLink['type'];
+}) {
+  const isForward = to.left >= from.right;
+  const startX = isForward ? from.right : from.left;
+  const endX = isForward ? to.left : to.right;
+  const linkWidth = Math.max(8, Math.abs(endX - startX));
+  const centerY = from.top + from.height / 2;
+
   const getColor = () => {
     switch (type) {
-      case 'MODIFIER':
-        return '#facc15'; // 黄色
       case 'RESONANCE':
         return '#22d3ee'; // 青色
       case 'CHAIN_DEFENSE':
@@ -32,59 +71,42 @@ function LightningLink({ from, to, type }: { from: number; to: number; type: Slo
       case 'DESPERATE_STRIKE':
         return '#ef4444'; // 红色
       default:
-        return '#facc15';
+        return '#facc15'; // 黄色
     }
   };
-  
+
   const color = getColor();
-  
+
   return (
     <motion.div
-      className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full pointer-events-none z-20"
+      className="absolute h-1 rounded-full"
       style={{
-        left: `${Math.min(fromX, toX + (isForward ? 0 : slotWidth))}px`,
+        left: `${Math.min(startX, endX)}px`,
+        top: `${centerY}px`,
         width: `${linkWidth}px`,
         background: `linear-gradient(90deg, ${color}80, ${color}, ${color}80)`,
         boxShadow: `0 0 10px ${color}, 0 0 20px ${color}80`,
       }}
       initial={{ opacity: 0, scaleX: 0 }}
-      animate={{ 
-        opacity: 1, 
-        scaleX: 1,
-      }}
+      animate={{ opacity: 1, scaleX: 1 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
       {/* 闪电图标 */}
       <motion.div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.7, 1, 0.7],
-        }}
-        transition={{
-          duration: 0.8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
+        animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
         style={{ color }}
       >
         ⚡
       </motion.div>
-      
+
       {/* 流动光效 */}
       <motion.div
         className="absolute inset-0 rounded-full"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
-        }}
-        animate={{
-          x: isForward ? ['-100%', '100%'] : ['100%', '-100%'],
-        }}
-        transition={{
-          duration: 1,
-          repeat: Infinity,
-          ease: 'linear',
-        }}
+        style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
+        animate={{ x: isForward ? ['-100%', '100%'] : ['100%', '-100%'] }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
       />
     </motion.div>
   );
@@ -93,9 +115,9 @@ function LightningLink({ from, to, type }: { from: number; to: number; type: Slo
 // 回合总结显示组件
 function TurnSummaryDisplay() {
   const turnSummary = useGameStore((s) => s.turnSummary);
-  
+
   if (!turnSummary) return null;
-  
+
   return (
     <div className="flex items-center justify-center gap-3 text-xs">
       <span className="text-blue-300 text-shadow-sm">生成护盾: {turnSummary.totalArmor}</span>
@@ -110,14 +132,13 @@ function DamageEffects() {
   const turnSummary = useGameStore((s) => s.turnSummary);
   const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
   const phase = useGameStore((s) => s.phase);
-  
-  // 在结算阶段或胜利/失败阶段都显示伤害跳字
+
   const shouldShowDamage = phase === 'EXECUTE_PHASE3' || phase === 'VICTORY' || phase === 'DEFEAT';
-  
+
   if (!showExecutionSummary || !shouldShowDamage || !turnSummary) {
     return null;
   }
-  
+
   return (
     <>
       {/* 玩家受伤特效 */}
@@ -129,17 +150,18 @@ function DamageEffects() {
           transition={{ duration: 0.5, type: 'spring' }}
           className="fixed left-1/4 top-1/2 z-50 pointer-events-none"
         >
-          <div className="text-6xl font-black text-red-500 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]"
-            style={{ 
+          <div
+            className="text-6xl font-black text-red-500 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]"
+            style={{
               textShadow: '0 0 30px rgba(239,68,68,0.8), 0 0 60px rgba(239,68,68,0.5)',
-              WebkitTextStroke: '2px white'
+              WebkitTextStroke: '2px white',
             }}
           >
             -{turnSummary.hpLoss}
           </div>
         </motion.div>
       )}
-      
+
       {/* 怪物受伤特效 */}
       {turnSummary.totalDamage > 0 && (
         <motion.div
@@ -149,10 +171,11 @@ function DamageEffects() {
           transition={{ duration: 0.5, type: 'spring', delay: 0.1 }}
           className="fixed right-1/4 top-1/2 z-50 pointer-events-none"
         >
-          <div className="text-6xl font-black text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
-            style={{ 
+          <div
+            className="text-6xl font-black text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
+            style={{
               textShadow: '0 0 30px rgba(249,115,22,0.8), 0 0 60px rgba(249,115,22,0.5)',
-              WebkitTextStroke: '2px white'
+              WebkitTextStroke: '2px white',
             }}
           >
             -{turnSummary.totalDamage}
@@ -206,8 +229,9 @@ function SlotPreviewOverlay({ preview }: { preview: SlotPreview }) {
   );
 }
 
-function PipelineSlot({ index, keepVisible }: { index: number; keepVisible?: boolean }) {
+function PipelineSlot({ index }: { index: number }) {
   const card = useGameStore((s) => s.pipeline[index]);
+  const pipelineSnapshot = useGameStore((s) => s.pipelineSnapshot);
   const executingIndex = useGameStore((s) => s.executingIndex);
   const phase = useGameStore((s) => s.phase);
   const removeFromPipeline = useGameStore((s) => s.removeFromPipeline);
@@ -215,6 +239,9 @@ function PipelineSlot({ index, keepVisible }: { index: number; keepVisible?: boo
   const slotPreviews = useGameStore((s) => s.slotPreviews);
   const intent = useGameStore((s) => s.enemy.intent);
   const globalDamageBonus = useGameStore((s) => s.globalDamageBonus);
+
+  // 结算阶段展示快照（此时 pipeline 已清空进弃牌堆）
+  const displayCard = card ?? (phase === 'EXECUTE_PHASE3' ? pipelineSnapshot?.[index] ?? null : null);
 
   const isLocked = slotStatus?.isLocked ?? false;
   const isBurning = slotStatus?.statusEffects.some((e) => e.type === StatusEffectType.BURNING) ?? false;
@@ -227,15 +254,23 @@ function PipelineSlot({ index, keepVisible }: { index: number; keepVisible?: boo
     disabled: phase !== 'PLAY' || isLocked,
   });
 
+  // 槽内卡牌可拖拽换位（PLAY 阶段）
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+    id: `pipeline-card-${index}`,
+    data: { type: 'pipeline-card', index, card },
+    disabled: phase !== 'PLAY' || !card,
+  });
+
   const isHighlighted = (phase === 'EXECUTE_PHASE1' || phase === 'EXECUTE_PHASE2') && executingIndex === index;
   const isPhase2Attack = phase === 'EXECUTE_PHASE2' && executingIndex === index;
 
   return (
     <motion.div
       ref={setNodeRef}
+      data-slot-index={index}
       className={`
         w-32 h-44 rounded-xl border-2 border-dashed flex items-center justify-center
-        transition-colors relative
+        transition-colors relative touch-none
         ${isLocked
           ? 'border-purple-500/50 bg-purple-900/20'
           : isPhase2Attack
@@ -282,16 +317,22 @@ function PipelineSlot({ index, keepVisible }: { index: number; keepVisible?: boo
       )}
 
       <AnimatePresence mode="popLayout">
-        {(card && !isLocked) || (keepVisible && card) ? (
+        {displayCard && !isLocked ? (
           <motion.div
-            key={card?.uuid || 'empty'}
+            key={displayCard.uuid || 'snapshot'}
             initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: isDragging ? 0.35 : 1 }}
             exit={{ scale: 0.5, opacity: 0, y: -20 }}
             className="absolute inset-0"
           >
-            <div onClick={() => phase === 'PLAY' && removeFromPipeline(index)}>
-              {card && <Card card={card} isHighlighted={isHighlighted} damageBonus={globalDamageBonus} />}
+            <div
+              ref={setDragRef}
+              {...attributes}
+              {...listeners}
+              onClick={() => phase === 'PLAY' && removeFromPipeline(index)}
+              className="w-full h-full cursor-grab active:cursor-grabbing"
+            >
+              <Card card={displayCard} isHighlighted={isHighlighted} damageBonus={globalDamageBonus} />
             </div>
           </motion.div>
         ) : !isLocked ? (
@@ -304,40 +345,16 @@ function PipelineSlot({ index, keepVisible }: { index: number; keepVisible?: boo
 
 export function PipelineBoard() {
   const phase = useGameStore((s) => s.phase);
-  // const executePipelineAction = useGameStore((s) => s.executePipelineAction);
-  // const pipeline = useGameStore((s) => s.pipeline);
   const executionLog = useGameStore((s) => s.executionLog);
   const lastExecutionResult = useGameStore((s) => s.lastExecutionResult);
   const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
   const dismissExecutionSummary = useGameStore((s) => s.dismissExecutionSummary);
   const nextTurn = useGameStore((s) => s.nextTurn);
   const pipelineSlots = useGameStore((s) => s.pipelineSlots);
-  // const playerHp = useGameStore((s) => s.playerHp);
   const turnSummary = useGameStore((s) => s.turnSummary);
-  // const battleStats = useGameStore((s) => s.battleStats);
-  // const enemy = useGameStore((s) => s.enemy);
-  // const onBattleVictory = useRunStore((s) => s.onBattleVictory);
-  // const onBattleDefeat = useRunStore((s) => s.onBattleDefeat);
   const slotLinks = useGameStore((s) => s.slotLinks);
 
-  // const hasCards = pipeline.some((c) => c !== null);
-
-  // const handleExecute = async () => {
-  //   await executePipelineAction();
-  // };
-
-  // const handleVictory = () => {
-  //   // 传递战斗统计信息
-  //   onBattleVictory(playerHp, {
-  //     totalDamage: battleStats.totalDamage,
-  //     totalArmor: battleStats.totalArmor,
-  //     effectiveArmor: battleStats.effectiveArmor,
-  //     enemyName: enemy.name,
-  //   });
-  // };
-
   const handleDismissSummary = () => {
-    // 只有非胜利/失败状态才进入下一回合
     if (phase !== 'VICTORY' && phase !== 'DEFEAT') {
       nextTurn();
     }
@@ -351,30 +368,27 @@ export function PipelineBoard() {
     phase === 'EXECUTE_PHASE3' ? '📊 结算中...' :
     null;
 
-  // 在结算阶段且显示总结时，保持管道卡牌可见
-  const keepPipelineVisible = phase === 'EXECUTE_PHASE3' && showExecutionSummary;
-  
   // 是否触发震动（玩家或怪物受伤）
-  const shouldShake = showExecutionSummary && phase === 'EXECUTE_PHASE3' && turnSummary && 
+  const shouldShake = showExecutionSummary && phase === 'EXECUTE_PHASE3' && turnSummary &&
     (turnSummary.hpLoss > 0 || turnSummary.totalDamage > 0);
 
   return (
-    <motion.div 
+    <motion.div
       className="flex flex-col items-center gap-3 py-3 px-4 w-full"
       animate={shouldShake ? {
         x: [0, -10, 10, -10, 10, 0],
-        transition: { duration: 0.5 }
+        transition: { duration: 0.5 },
       } : {}}
     >
-      {/* 毛玻璃托盘背景 - 覆盖1-5号槽位区域 */}
+      {/* 毛玻璃托盘背景 - 覆盖槽位区域 */}
       <div className="relative">
-        <div 
+        <div
           className="absolute inset-0 rounded-2xl"
           style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.7)', // 深藏青色，70%透明度
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            margin: '-12px -16px -8px -16px', // 减少底部margin，避免遮挡按钮
+            margin: '-12px -16px -8px -16px',
             padding: '12px 16px 8px 16px',
           }}
         />
@@ -382,7 +396,7 @@ export function PipelineBoard() {
         <div className="flex items-center gap-2 relative z-10">
           {Array.from({ length: pipelineSlots }).map((_, i) => (
             <div key={i} className="flex items-center">
-              <PipelineSlot index={i} keepVisible={keepPipelineVisible} />
+              <PipelineSlot index={i} />
               {i < pipelineSlots - 1 && (
                 <motion.span
                   className="text-white/30 mx-1 text-lg"
@@ -394,19 +408,10 @@ export function PipelineBoard() {
               )}
             </div>
           ))}
-          
+
           {/* 闪电链接特效 - 只在 PLAY 阶段且槽位放满时显示 */}
           {phase === 'PLAY' && slotLinks.length > 0 && (
-            <div className="absolute inset-0 pointer-events-none">
-              {slotLinks.map((link, index) => (
-                <LightningLink
-                  key={`${link.from}-${link.to}-${index}`}
-                  from={link.from}
-                  to={link.to}
-                  type={link.type}
-                />
-              ))}
-            </div>
+            <LightningLinkLayer links={slotLinks} />
           )}
         </div>
       </div>
@@ -433,10 +438,10 @@ export function PipelineBoard() {
           >
             {executionLog.map((log, i) => (
               <motion.span
-                key={i}
+                key={`${i}-${log}`}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: Math.min(i * 0.05, 0.4) }}
                 className="text-xs px-2 py-1 rounded-full bg-white/10 text-yellow-300/80 text-shadow-sm"
               >
                 {log}
@@ -446,7 +451,7 @@ export function PipelineBoard() {
         )}
       </AnimatePresence>
 
-      {/* 回合总结 - 点击后消失 */}
+      {/* 回合总结 - 点击后继续 */}
       {phase === 'EXECUTE_PHASE3' && showExecutionSummary && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -465,12 +470,14 @@ export function PipelineBoard() {
           )}
           {/* 第二行：护盾和扣血总结 */}
           <TurnSummaryDisplay />
-          <div className="text-white/40 text-xs mt-1 text-shadow-sm">点击查看下回合</div>
+          <div className="text-white/40 text-xs mt-1 text-shadow-sm">点击进入下一回合</div>
         </motion.div>
       )}
 
       {/* 伤害特效 */}
-      <DamageEffects />
+      <AnimatePresence>
+        <DamageEffects />
+      </AnimatePresence>
 
     </motion.div>
   );

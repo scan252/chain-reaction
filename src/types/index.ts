@@ -107,6 +107,8 @@ export interface Enemy {
   attackPatterns: AttackPatternConfig[];
   baseDamage: number;
   damageVariance: number;
+  /** 是否为 Boss（用于 UI 展示，由节点类型决定） */
+  isBoss?: boolean;
 }
 
 export interface EnemyTemplate {
@@ -162,8 +164,6 @@ export interface SlotCombatResult {
   newVulnerableStacks: number;
   slotsToMarkBurning: number[];
   reflectDamageBonus: number;
-  // 镜面反射新效果：完全格挡时，将护盾值加到下一张攻击牌
-  mirrorReflectBonus: number;
   // 共鸣增幅V2效果：盾完美格挡时触发全局buff
   resonanceTrigger: boolean;
   // 背水一战效果：本回合受到伤害生命值最多扣到1
@@ -336,8 +336,3 @@ export interface EventReward {
   description: string;
   icon: string;
 }
-
-export const DEFAULT_PIPELINE_SLOTS = 5;
-export const DEFAULT_HAND_DRAW_COUNT = 8;
-export const PLAYER_MAX_HP = 120;
-export const REMOVE_CARD_COST = 50;

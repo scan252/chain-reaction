@@ -8,7 +8,6 @@ import type {
   MapNode,
   GameMap,
   MapNodeType as MapNodeTypeT,
-  SlotStatus,
 } from '../types';
 import { MapNodeType, AttackPattern } from '../types';
 
@@ -119,7 +118,6 @@ function pickWeightedPattern(patterns: AttackPatternConfig[]): AttackPatternConf
 export function generateEnemyIntent(
   enemy: { baseDamage: number; damageVariance: number; attackPatterns: AttackPatternConfig[] },
   pipelineSlots: number,
-  _slotStatuses?: SlotStatus[],
 ): EnemyIntent {
   const chosen = pickWeightedPattern(enemy.attackPatterns);
   const damage = enemy.baseDamage + Math.floor(Math.random() * (enemy.damageVariance + 1));
@@ -290,9 +288,11 @@ export function generateGameMap(): GameMap {
 
 export function getEnemyForNode(node: MapNode, pipelineSlots: number): Enemy {
   let template: EnemyTemplate;
+  let isBoss = false;
 
   if (node.type === MapNodeType.BOSS) {
     template = BOSS_TEMPLATES[Math.floor(Math.random() * BOSS_TEMPLATES.length)];
+    isBoss = true;
   } else {
     const layerEnemies = LAYER_ENEMIES[Math.min(node.layer, LAYER_ENEMIES.length - 1)];
     template = layerEnemies[Math.floor(Math.random() * layerEnemies.length)];
@@ -311,5 +311,6 @@ export function getEnemyForNode(node: MapNode, pipelineSlots: number): Enemy {
     attackPatterns: template.attackPatterns,
     baseDamage: template.baseDamage,
     damageVariance: template.damageVariance,
+    isBoss,
   };
 }

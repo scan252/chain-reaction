@@ -13,9 +13,6 @@ import type {
   EventReward,
 } from '../types';
 import {
-  DEFAULT_PIPELINE_SLOTS,
-  DEFAULT_HAND_DRAW_COUNT,
-  PLAYER_MAX_HP,
   MapNodeType,
   CLASS_MAX_MP,
   RELICS,
@@ -23,6 +20,7 @@ import {
 } from '../types';
 import { buildStarterDeck, generateRewardCards, generateShopItems } from '../data/cardData';
 import { generateGameMap } from '../data/mapData';
+import { PLAYER, REWARD, REST, EVENT, DECK, PIPELINE } from '../config/balance';
 
 // 事件奖励节点的固定三选一选项
 function buildEventRewards(): EventReward[] {
@@ -52,6 +50,8 @@ interface RunState {
   // 场景
   scene: SceneType;
   runActive: boolean;
+  /** 本局显式结局（替代场景推断） */
+  runResult: 'VICTORY' | 'DEFEAT' | null;
 
   // 玩家信息
   playerProfile: PlayerProfile | null;
@@ -106,10 +106,10 @@ interface RunState {
   skipReward: () => void;
   proceedToMap: () => void;
   buyCard: (itemId: string) => void;
-  removeCard: (templateId: string) => void;
+  removeCard: (deckIndex: number) => void;
   restHealHp: () => void;
   restRestoreMp: () => void;
-  useSkill: () => void;
+  spendSkillMp: () => void;
   leaveShop: () => void;
   // 事件奖励
   collectEventReward: (rewardType: EventRewardType) => void;
@@ -128,15 +128,16 @@ export const useRunStore = create<RunState>()(
   immer((set, get) => ({
     scene: 'TITLE',
     runActive: false,
+    runResult: null,
     playerProfile: null,
-    gold: 100,
-    playerMaxHp: PLAYER_MAX_HP,
-    playerHp: PLAYER_MAX_HP,
+    gold: PLAYER.INITIAL_GOLD,
+    playerMaxHp: PLAYER.MAX_HP,
+    playerHp: PLAYER.MAX_HP,
     playerMp: 0,
     playerMaxMp: 0,
     masterDeck: [],
-    pipelineSlots: DEFAULT_PIPELINE_SLOTS,
-    handDrawCount: DEFAULT_HAND_DRAW_COUNT,
+    pipelineSlots: PIPELINE.INITIAL_SLOTS,
+    handDrawCount: PIPELINE.HAND_DRAW_COUNT,
     map: { layers: [], currentNodeId: null },
     currentLayer: -1,
     pendingReward: null,
@@ -178,6 +179,7 @@ export const useRunStore = create<RunState>()(
           state.playerProfile = effectiveProfile;
         }
         state.runActive = true;
+        state.runResult = null;
         // 如果从NPC_HELP场景开始且已有卡组（奖励卡牌已添加），则在初始卡组基础上添加
         if (scene === 'NPC_HELP' && masterDeck.length > 0) {
           // 已有奖励卡牌，追加初始卡组
@@ -188,19 +190,29 @@ export const useRunStore = create<RunState>()(
           state.masterDeck = buildStarterDeck();
         }
         state.scene = 'MAP';
-        state.gold = 100;
-        state.playerMaxHp = PLAYER_MAX_HP;
-        state.playerHp = PLAYER_MAX_HP;
+        state.gold = PLAYER.INITIAL_GOLD;
+        state.playerMaxHp = PLAYER.MAX_HP;
+        state.playerHp = PLAYER.MAX_HP;
         state.playerMaxMp = maxMp;
         state.playerMp = maxMp;
-        state.pipelineSlots = DEFAULT_PIPELINE_SLOTS;
-        state.handDrawCount = DEFAULT_HAND_DRAW_COUNT;
+        state.pipelineSlots = PIPELINE.INITIAL_SLOTS;
+        state.handDrawCount = PIPELINE.HAND_DRAW_COUNT;
         state.map = map;
         state.currentLayer = -1;
         state.pendingReward = null;
         state.rewardCardCollected = false;
         state.shopItems = [];
         state.showRestChoice = false;
+        // 跨局状态彻底重置
+        state.relics = [];
+        state.pendingEventRewards = null;
+        state.eventRewardCollected = false;
+        state.gameStats = {
+          totalDamage: 0,
+          totalArmor: 0,
+          effectiveArmor: 0,
+          defeatedEnemies: [],
+        };
       });
     },
 
@@ -280,17 +292,20 @@ export const useRunStore = create<RunState>()(
     },
 
     onBattleVictory: (remainingHp: number, battleStats?: { totalDamage: number; totalArmor: number; effectiveArmor: number; enemyName: string }) => {
+      // 防重复：仅当仍处于战斗场景时结算（快速双击/竞态保护）
+      if (get().scene !== 'BATTLE') return;
+
       // 生成两轮卡牌奖励
       const round1Cards = generateRewardCards(3);
       const round2Cards = generateRewardCards(3);
-      
+
       const reward: RewardChoice = {
         cards: round1Cards, // 第一轮显示的卡牌
-        gold: 15 + Math.floor(Math.random() * 16),
-        bonusSlot: Math.random() < 0.1 && get().pipelineSlots < 8,
+        gold: REWARD.GOLD_MIN + Math.floor(Math.random() * REWARD.GOLD_VARIANCE),
+        bonusSlot: Math.random() < REWARD.BONUS_SLOT_CHANCE && get().pipelineSlots < PIPELINE.MAX_SLOTS,
         currentRound: 1,
         totalRounds: 2,
-        allCards: [round1Cards, round2Cards], // 保存所有轮次的卡牌
+        allCards: [round1Cards, round2Cards],
       };
 
       set((state) => {
@@ -298,8 +313,7 @@ export const useRunStore = create<RunState>()(
         state.pendingReward = reward;
         state.rewardCardCollected = false;
         state.scene = 'REWARD';
-        
-        // 累加战斗统计
+
         if (battleStats) {
           state.gameStats.totalDamage += battleStats.totalDamage;
           state.gameStats.totalArmor += battleStats.totalArmor;
@@ -312,6 +326,7 @@ export const useRunStore = create<RunState>()(
     onBattleDefeat: () => {
       set((state) => {
         state.runActive = false;
+        state.runResult = 'DEFEAT';
         state.scene = 'GAME_END';
       });
     },
@@ -343,10 +358,11 @@ export const useRunStore = create<RunState>()(
     collectBonusSlot: () => {
       set((state) => {
         if (!state.pendingReward?.bonusSlot) return;
-        if (state.pipelineSlots < 8) {
+        if (state.pipelineSlots < PIPELINE.MAX_SLOTS) {
           state.pipelineSlots += 1;
-          state.pendingReward.bonusSlot = false;
         }
+        // 无论是否达到上限都消耗掉本次奖励，避免按钮无限点击
+        state.pendingReward.bonusSlot = false;
       });
     },
 
@@ -376,14 +392,14 @@ export const useRunStore = create<RunState>()(
           state.pendingReward = null;
         }
 
-        // 检查是否通关（Boss已击败，第4层）
+        // 检查是否通关（Boss已访问）
         const bossLayer = state.map.layers[state.map.layers.length - 1];
         const bossDefeated = bossLayer?.some((n) => n.visited && n.type === MapNodeType.BOSS);
 
         if (bossDefeated) {
-          // 通关显示结算页面
           state.scene = 'GAME_END';
           state.runActive = false;
+          state.runResult = 'VICTORY';
         } else {
           state.scene = 'MAP';
         }
@@ -400,21 +416,22 @@ export const useRunStore = create<RunState>()(
       });
     },
 
-    removeCard: (templateId: string) => {
+    // 按牌组索引移除卡牌（商店删卡），带最小卡组保护
+    removeCard: (deckIndex: number) => {
       set((state) => {
-        if (state.gold < state.shopItems.find((i) => i.type === 'REMOVE_CARD')?.cost!) return;
-        const idx = state.masterDeck.findIndex((c) => c.templateId === templateId);
-        if (idx === -1) return;
         const removeItem = state.shopItems.find((i) => i.type === 'REMOVE_CARD');
         if (!removeItem) return;
+        if (state.gold < removeItem.cost) return;
+        if (state.masterDeck.length <= DECK.MIN_SIZE) return;
+        if (deckIndex < 0 || deckIndex >= state.masterDeck.length) return;
         state.gold -= removeItem.cost;
-        state.masterDeck.splice(idx, 1);
+        state.masterDeck.splice(deckIndex, 1);
       });
     },
 
     restHealHp: () => {
       set((state) => {
-        state.playerHp = Math.min(state.playerMaxHp, state.playerHp + Math.floor(state.playerMaxHp * 0.3));
+        state.playerHp = Math.min(state.playerMaxHp, state.playerHp + Math.floor(state.playerMaxHp * REST.HEAL_RATIO));
         state.showRestChoice = false;
         state.scene = 'MAP';
       });
@@ -422,13 +439,13 @@ export const useRunStore = create<RunState>()(
 
     restRestoreMp: () => {
       set((state) => {
-        state.playerMp = Math.min(state.playerMaxMp, state.playerMp + 2);
+        state.playerMp = Math.min(state.playerMaxMp, state.playerMp + REST.MEDITATE_MP);
         state.showRestChoice = false;
         state.scene = 'MAP';
       });
     },
 
-    useSkill: () => {
+    spendSkillMp: () => {
       set((state) => {
         if (state.playerMp > 0) {
           state.playerMp -= 1;
@@ -445,16 +462,18 @@ export const useRunStore = create<RunState>()(
     collectEventReward: (rewardType: EventRewardType) => {
       set((state) => {
         if (state.eventRewardCollected) return;
-        
+
         switch (rewardType) {
-          case EventRewardType.GOLD_100:
-            state.gold += 100;
+          case EventRewardType.GOLD_100: {
+            state.gold += EVENT.GOLD;
             break;
-          case EventRewardType.HEAL_20_MP_1:
-            state.playerHp = Math.min(state.playerMaxHp, state.playerHp + Math.floor(state.playerMaxHp * 0.2));
+          }
+          case EventRewardType.HEAL_20_MP_1: {
+            state.playerHp = Math.min(state.playerMaxHp, state.playerHp + Math.floor(state.playerMaxHp * EVENT.HEAL_RATIO));
             state.playerMp = Math.min(state.playerMaxMp, state.playerMp + 1);
             break;
-          case EventRewardType.RANDOM_RELIC:
+          }
+          case EventRewardType.RANDOM_RELIC: {
             const allRelicIds = Object.keys(RELICS) as RelicId[];
             const availableRelics = allRelicIds.filter(id => !state.relics.includes(id));
             if (availableRelics.length > 0) {
@@ -462,6 +481,7 @@ export const useRunStore = create<RunState>()(
               state.relics.push(randomRelic);
             }
             break;
+          }
         }
         state.eventRewardCollected = true;
       });
@@ -501,6 +521,7 @@ export const useRunStore = create<RunState>()(
       set((state) => {
         state.scene = 'TITLE';
         state.runActive = false;
+        state.runResult = null;
       });
     },
   }))

@@ -3,6 +3,7 @@ import { useRunStore } from '../store/runStore';
 import { Card } from './Card';
 import { ShopItemType } from '../types';
 import type { CardInstance, CardTemplate } from '../types';
+import { DECK } from '../config/balance';
 
 function toDisplayInstance(card: CardTemplate): CardInstance {
   return { ...card, uuid: card.templateId };
@@ -56,16 +57,19 @@ export function ShopScreen() {
               移除卡牌
               <span className="text-yellow-400 ml-2">💰 {removeItem.cost}</span>
               {gold < removeItem.cost && <span className="text-red-400 text-sm ml-2">(金币不足)</span>}
+              {masterDeck.length <= DECK.MIN_SIZE && (
+                <span className="text-red-400 text-sm ml-2">(卡组至少需要保留 {DECK.MIN_SIZE} 张)</span>
+              )}
             </h3>
             <div className="flex flex-wrap gap-4 mb-6 justify-center">
               {masterDeck.map((card, i) => {
-                const canAfford = gold >= removeItem.cost;
+                const canRemove = gold >= removeItem.cost && masterDeck.length > DECK.MIN_SIZE;
                 return (
                   <motion.div
                     key={`${card.templateId}-${i}`}
-                    whileHover={canAfford ? { y: -4, scale: 1.05 } : {}}
-                    className={`${canAfford ? 'cursor-pointer' : 'opacity-40'}`}
-                    onClick={() => canAfford && removeCard(card.templateId)}
+                    whileHover={canRemove ? { y: -4, scale: 1.05 } : {}}
+                    className={`${canRemove ? 'cursor-pointer' : 'opacity-40'}`}
+                    onClick={() => canRemove && removeCard(i)}
                   >
                     <Card card={toDisplayInstance(card)} size="md" />
                   </motion.div>

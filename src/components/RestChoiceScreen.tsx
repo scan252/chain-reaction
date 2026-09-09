@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
+import { REST } from '../config/balance';
 
 export function RestChoiceScreen() {
   const playerHp = useRunStore((s) => s.playerHp);
@@ -9,7 +10,8 @@ export function RestChoiceScreen() {
   const restHealHp = useRunStore((s) => s.restHealHp);
   const restRestoreMp = useRunStore((s) => s.restRestoreMp);
 
-  const healAmount = Math.floor(playerMaxHp * 0.3);
+  const healAmount = Math.floor(playerMaxHp * REST.HEAL_RATIO);
+  const canHeal = playerHp < playerMaxHp;
   const canRestoreMp = playerMp < playerMaxMp;
 
   return (
@@ -25,16 +27,21 @@ export function RestChoiceScreen() {
         <p className="text-white/40 text-sm">选择恢复方式</p>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-6 max-w-2xl w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl w-full">
         {/* 回复生命 */}
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: canHeal ? 1.03 : 1 }}
+          whileTap={{ scale: canHeal ? 0.97 : 1 }}
           onClick={restHealHp}
-          className="flex flex-col items-center p-8 rounded-2xl bg-gradient-to-br from-red-900/40 to-red-950/40 border border-red-500/30 hover:border-red-500/50 transition-all group"
+          disabled={!canHeal}
+          className={`flex flex-col items-center p-8 rounded-2xl border transition-all group ${
+            canHeal
+              ? 'bg-gradient-to-br from-red-900/40 to-red-950/40 border-red-500/30 hover:border-red-500/50'
+              : 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
+          }`}
         >
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform">
             ❤️
@@ -44,6 +51,9 @@ export function RestChoiceScreen() {
           <p className="text-white/40 text-xs mt-2">
             {playerHp} / {playerMaxHp} HP
           </p>
+          {!canHeal && (
+            <p className="text-white/30 text-xs mt-1">生命值已满</p>
+          )}
         </motion.button>
 
         {/* 回复MP */}
@@ -65,7 +75,7 @@ export function RestChoiceScreen() {
             🔮
           </div>
           <h3 className="text-xl font-bold text-white mb-2">冥想恢复</h3>
-          <p className="text-purple-400 text-sm">+2 MP</p>
+          <p className="text-purple-400 text-sm">+{REST.MEDITATE_MP} MP</p>
           <p className="text-white/40 text-xs mt-2">
             {playerMp} / {playerMaxMp} MP
           </p>
