@@ -24,13 +24,13 @@ export function ShopScreen() {
     <div className="flex flex-col h-screen bg-gradient-to-b from-[#0a0a1a] via-[#1a1520] to-[#0a0a1a] overflow-hidden">
       {/* 顶部 */}
       <div className="text-center py-6 border-b border-white/10">
-        <h1 className="text-3xl font-bold text-yellow-400">🛒 商店</h1>
-        <p className="text-xl text-yellow-300 mt-2">💰 {gold}</p>
+        <h1 className="display-title text-3xl">驿 站 商 店</h1>
+        <p className="res-chip mt-2"><span className="text-[var(--gold-500)] text-[10px]">◆</span><span className="num text-[var(--gold-300)]">{gold}</span></p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {/* 可购买卡牌 */}
-        <h3 className="text-lg font-bold text-white/70 mb-4">购买卡牌</h3>
+        <div className="section-label mb-4">— 购买卡牌 —</div>
         <div className="flex flex-wrap gap-6 mb-8 justify-center">
           {shopItems.map((item) => {
             const canAfford = gold >= item.cost && !!item.card;
@@ -51,16 +51,16 @@ export function ShopScreen() {
         </div>
 
         {/* 移除卡牌 */}
-        <h3 className="text-lg font-bold text-white/70 mb-1">
-          移除卡牌
-          <span className="text-yellow-400 ml-2">💰 {removeCost}</span>
+        <div className="section-label mb-1">— 移除卡牌 —</div>
+        <div className="flex items-center gap-3 mb-1 text-sm">
+          <span className="text-[var(--gold-300)] num">◆ {removeCost}</span>
           {!canRemoveAny && (
-            <span className="text-red-400 text-sm ml-2">
+            <span className="text-[#e88a84] text-xs">
               {gold < removeCost ? '(金币不足)' : `(卡组至少保留 ${DECK.MIN_SIZE} 张)`}
             </span>
           )}
-        </h3>
-        <p className="text-white/40 text-xs mb-3">每次删除后价格会上涨；点击要删除的卡</p>
+        </div>
+        <p className="text-[var(--text-muted)] text-xs mb-3">每次删除后价格会上涨；点击要删除的卡</p>
         <div className="flex flex-wrap gap-3 mb-6 justify-center">
           {masterDeck.map((card, i) => {
             const canRemove = canRemoveAny;

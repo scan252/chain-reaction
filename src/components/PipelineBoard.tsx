@@ -264,7 +264,7 @@ function SlotPreviewOverlay({ preview }: { preview: SlotPreview }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="absolute top-full mt-1 left-1/2 -translate-x-1/2 font-bold bg-black/95 pointer-events-none border-2 border-white/40 rounded-2xl px-4 py-2 whitespace-nowrap z-20 flex flex-col items-center gap-0.5 shadow-2xl"
+      className="absolute top-full mt-1 left-1/2 -translate-x-1/2 font-bold bg-black/95 pointer-events-none border-2 border-white/40 rounded-2xl px-4 py-2 whitespace-nowrap z-[15] flex flex-col items-center gap-0.5 shadow-2xl"
       style={{ fontSize: '13px' }}
     >
       <span className="text-red-400 text-shadow">⚔ 受击 {preview.incomingDamage}</span>
@@ -281,7 +281,7 @@ function SlotPreviewOverlay({ preview }: { preview: SlotPreview }) {
   );
 }
 
-function PipelineSlot({ index }: { index: number }) {
+function PipelineSlot({ index, selectedUuid, onSlotClick }: { index: number; selectedUuid?: string | null; onSlotClick?: (slot: number) => void }) {
   const card = useGameStore((s) => s.pipeline[index]);
   const pipelineSnapshot = useGameStore((s) => s.pipelineSnapshot);
   const executingIndex = useGameStore((s) => s.executingIndex);
@@ -321,6 +321,9 @@ function PipelineSlot({ index }: { index: number }) {
     <motion.div
       ref={setNodeRef}
       data-slot-index={index}
+      onClick={() => {
+        if (phase === 'PLAY' && selectedUuid && !displayCard && !isLocked) onSlotClick?.(index);
+      }}
       className={`
         w-32 h-40 rounded-xl border-2 border-dashed flex items-center justify-center
         transition-colors relative touch-none
@@ -334,9 +337,11 @@ function PipelineSlot({ index }: { index: number }) {
           ? 'border-yellow-400 bg-yellow-400/10'
           : isBurning
           ? 'border-orange-500/60 bg-orange-500/10'
+          : selectedUuid && !displayCard
+          ? 'border-[var(--gold-500)]/70 bg-[rgba(212,169,92,0.08)] animate-pulse'
           : isAttackTarget && phase === 'PLAY'
           ? 'border-red-400/40 bg-red-500/5'
-          : 'border-white/20 bg-white/5'}
+          : 'border-[var(--line)] bg-white/[0.03]'}
       `}
       animate={isHighlighted ? {
         boxShadow: ['0 0 0px transparent', '0 0 20px #facc1580', '0 0 0px transparent'],
@@ -394,7 +399,11 @@ function PipelineSlot({ index }: { index: number }) {
               ref={setDragRef}
               {...attributes}
               {...listeners}
-              onClick={() => phase === 'PLAY' && removeFromPipeline(index)}
+              onClick={() => {
+                if (phase !== 'PLAY') return;
+                if (selectedUuid && !card) onSlotClick?.(index);
+                else if (!selectedUuid && card) removeFromPipeline(index);
+              }}
               className="w-full h-full cursor-grab active:cursor-grabbing"
             >
               <Card card={displayCard} isHighlighted={isHighlighted} damageBonus={globalDamageBonus} />
@@ -408,7 +417,7 @@ function PipelineSlot({ index }: { index: number }) {
   );
 }
 
-export function PipelineBoard() {
+export function PipelineBoard({ selectedUuid, onSlotClick }: { selectedUuid?: string | null; onSlotClick?: (slot: number) => void } = {}) {
   const phase = useGameStore((s) => s.phase);
   const executionLog = useGameStore((s) => s.executionLog);
   const lastExecutionResult = useGameStore((s) => s.lastExecutionResult);
@@ -450,7 +459,7 @@ export function PipelineBoard() {
         <div
           className="absolute inset-0 rounded-2xl"
           style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backgroundColor: 'rgba(13, 17, 27, 0.82)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             margin: '-10px -16px -6px -16px',
@@ -461,7 +470,7 @@ export function PipelineBoard() {
         <div className="flex items-center gap-2 relative z-10">
           {Array.from({ length: pipelineSlots }).map((_, i) => (
             <div key={i} className="flex items-center">
-              <PipelineSlot index={i} />
+              <PipelineSlot index={i} selectedUuid={selectedUuid} onSlotClick={onSlotClick} />
               {i < pipelineSlots - 1 && (
                 <motion.span
                   className="text-white/30 mx-1 text-lg"

@@ -30,8 +30,8 @@ export function EventRewardScreen() {
         animate={{ opacity: 1, scale: 1 }}
         className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-8 max-w-4xl w-full mx-4 border border-white/10"
       >
-        <h2 className="text-3xl font-bold text-white text-center mb-2">神秘奖励</h2>
-        <p className="text-white/60 text-center mb-8">选择一份奖励继续前进</p>
+        <h2 className="display-title text-3xl text-center mb-2">神秘奖励</h2>
+        <p className="text-xs text-[var(--text-muted)] text-center mb-8 tracking-[0.25em]">选择一份奖励继续前进</p>
 
         {!eventRewardCollected ? (
           <>

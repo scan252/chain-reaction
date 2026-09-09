@@ -48,7 +48,7 @@ const MASCOT_DIALOGUES = [
 const HIDDEN_DIALOGUE = "少年，你想要变强吗？";
 
 // 对话字号
-const DIALOG_FONT = { fontSize: '24px' } as const;
+const DIALOG_FONT = { fontSize: '17px' } as const;
 
 export function MapScreen() {
   const map = useRunStore((s) => s.map);
@@ -214,24 +214,21 @@ export function MapScreen() {
       }}
     >
         {/* 顶部信息 */}
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 py-4 bg-black/40 border-b border-white/10 text-base px-2">
-        <span className="text-red-400 font-bold text-lg">❤️ {playerHp}/{playerMaxHp}</span>
-        <span className="text-purple-400 font-bold text-lg">🔮 {playerMp}/{playerMaxMp}</span>
-        <span className="text-yellow-400 font-bold text-lg">💰 {gold}</span>
-        <span
-          className="text-white/60 text-base cursor-pointer hover:text-white transition-colors"
-          onClick={() => setShowDeckModal(true)}
-        >
-          🃏 {masterDeck.length} 张
+        <div className="flex flex-wrap items-center justify-center gap-2.5 py-2.5 bg-[#0a0d15]/80 border-b border-[var(--line)] text-[13px] px-3">
+        <span className="res-chip"><span className="text-[#e88a84] text-[10px]">✚</span><span className="num text-[var(--text-primary)]">{playerHp}/{playerMaxHp}</span></span>
+        <span className="res-chip"><span className="text-[#b79ae8] text-[10px]">✦</span><span className="num text-[var(--text-primary)]">{playerMp}/{playerMaxMp}</span></span>
+        <span className="res-chip"><span className="text-[var(--gold-500)] text-[10px]">◆</span><span className="num text-[var(--gold-300)]">{gold}</span></span>
+        <span className="res-chip cursor-pointer hover:border-[var(--line-strong)] transition-colors" onClick={() => setShowDeckModal(true)}>
+          <span className="text-[var(--accent-teal)] text-[10px]">❖</span><span className="num text-[var(--text-primary)]">{masterDeck.length}</span><span className="text-[10px] text-[var(--text-muted)]">张</span>
         </span>
-        <span className="text-cyan-400 text-base">⚡ {pipelineSlots} 槽</span>
-        <span className="text-green-400 font-bold text-lg">📍 第 {currentLayer + 1} 层</span>
+        <span className="res-chip"><span className="text-[var(--accent-teal)] text-[10px]">▤</span><span className="num text-[var(--text-primary)]">{pipelineSlots}</span><span className="text-[10px] text-[var(--text-muted)]">槽</span></span>
+        <span className="res-chip"><span className="text-[var(--gold-500)] text-[10px]">⬗</span><span className="num text-[var(--text-primary)]">第 {Math.max(1, currentLayer + 1)} 层</span></span>
       </div>
 
         {/* 标题 */}
         <div className="text-center py-4">
-          <h1 className="text-2xl font-bold text-white tracking-wider">冒险地图</h1>
-          <p className="text-sm text-white/50">选择下一个节点 <span className="text-white/30">（地图可滚动 ↓）</span></p>
+          <h1 className="text-xl font-bold tracking-[0.4em] text-[var(--text-primary)] pl-[0.4em]">冒险地图</h1>
+          <p className="text-xs text-[var(--text-muted)] tracking-[0.2em] mt-1">选择下一个节点 · 地图可滚动</p>
         </div>
 
         {/* 地图容器 */}
@@ -296,7 +293,7 @@ export function MapScreen() {
                   className="absolute left-1/2 -translate-x-1/2 top-full mt-4 sm:left-full sm:translate-x-0 sm:top-1/2 sm:-translate-y-1/2 sm:mt-0 sm:ml-4 z-20"
                 >
                   <div
-                    className={`relative bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-xl w-[min(85vw,340px)] sm:w-auto sm:min-w-[320px] sm:max-w-[400px] ${
+                    className={`relative bg-[#12161f]/96 backdrop-blur-md rounded-xl px-5 py-4 shadow-2xl border border-[var(--line-strong)] w-[min(85vw,340px)] sm:w-auto sm:min-w-[300px] sm:max-w-[380px] ${
                       isHiddenDialogue
                         ? 'border-4 border-yellow-400 shadow-yellow-400/50'
                         : 'border border-amber-200/50'
@@ -312,7 +309,7 @@ export function MapScreen() {
                     />
 
                     {/* 对话内容 */}
-                    <p className="text-gray-800 font-medium leading-relaxed relative z-10" style={DIALOG_FONT}>
+                    <p className="text-[var(--text-primary)] font-medium leading-relaxed relative z-10" style={DIALOG_FONT}>
                       {showingFirstDialogue
                         ? FIRST_CLICK_DIALOGUE
                         : isHiddenDialogue
@@ -326,15 +323,13 @@ export function MapScreen() {
                       <div className="flex flex-wrap gap-3 mt-5 justify-center">
                         <button
                           onClick={() => handleHiddenButtonClick(true)}
-                          className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-transform"
-                          style={DIALOG_FONT}
+                          className="btn btn-primary" style={{ height: 40, fontSize: 15 }}
                         >
                           又寸
                         </button>
                         <button
                           onClick={() => handleHiddenButtonClick(false)}
-                          className="px-6 py-3 bg-gray-400 text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-transform"
-                          style={DIALOG_FONT}
+                          className="btn btn-secondary" style={{ height: 40, fontSize: 15 }}
                         >
                           不用了，谢谢
                         </button>
@@ -344,28 +339,25 @@ export function MapScreen() {
                     {/* 神秘指令选择题 */}
                     {showSecretQuestion && (
                       <div className="mt-5">
-                        <p className="text-gray-800 font-medium mb-4" style={DIALOG_FONT}>
+                        <p className="text-[var(--text-primary)] font-medium mb-4" style={DIALOG_FONT}>
                           那就请输入神秘指令吧：
                         </p>
                         <div className="flex flex-col gap-3">
                           <button
                             onClick={() => handleSecretCommand('A')}
-                            className="px-4 py-3 bg-blue-500/80 text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-transform text-left"
-                            style={DIALOG_FONT}
+                            className="btn btn-secondary !justify-start" style={{ height: 42, fontSize: 15 }}
                           >
                             A. 什么令？我不道啊
                           </button>
                           <button
                             onClick={() => handleSecretCommand('B')}
-                            className="px-4 py-3 bg-green-500/80 text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-transform text-left"
-                            style={DIALOG_FONT}
+                            className="btn btn-secondary !justify-start" style={{ height: 42, fontSize: 15 }}
                           >
                             B. 老师没教这个
                           </button>
                           <button
                             onClick={() => handleSecretCommand('C')}
-                            className="px-4 py-3 bg-purple-500/80 text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-transform text-left"
-                            style={DIALOG_FONT}
+                            className="btn btn-secondary !justify-start" style={{ height: 42, fontSize: 15 }}
                           >
                             C. 上上下下左右左右BABA
                           </button>

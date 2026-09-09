@@ -34,10 +34,8 @@ export function RestChoiceScreen() {
         animate={{ y: 0, opacity: 1 }}
         className="text-center mb-10"
       >
-        <h1 className="text-4xl font-bold tracking-widest bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent mb-2">
-          休息处
-        </h1>
-        <p className="text-white/40 text-sm">选择一种恢复方式（锻造会永久强化一张卡）</p>
+        <h1 className="display-title text-4xl mb-3">休息处</h1>
+        <p className="text-xs text-[var(--text-muted)] tracking-[0.25em]">选择一种恢复方式 · 锻造将永久强化卡牌</p>
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -104,7 +102,7 @@ export function RestChoiceScreen() {
               disabled={!canHeal}
               className={`flex flex-col items-center p-6 rounded-2xl border transition-all group ${
                 canHeal
-                  ? 'bg-gradient-to-br from-red-900/40 to-red-950/40 border-red-500/30 hover:border-red-500/50'
+                  ? 'bg-[rgba(217,86,79,0.08)] border-[rgba(217,86,79,0.4)] hover:border-[rgba(217,86,79,0.7)]'
                   : 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
               }`}
             >
@@ -128,7 +126,7 @@ export function RestChoiceScreen() {
               disabled={!canRestoreMp}
               className={`flex flex-col items-center p-6 rounded-2xl border transition-all group ${
                 canRestoreMp
-                  ? 'bg-gradient-to-br from-purple-900/40 to-purple-950/40 border-purple-500/30 hover:border-purple-500/50'
+                  ? 'bg-[rgba(157,123,224,0.08)] border-[rgba(157,123,224,0.4)] hover:border-[rgba(157,123,224,0.7)]'
                   : 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
               }`}
             >
@@ -152,7 +150,7 @@ export function RestChoiceScreen() {
               disabled={!canForge}
               className={`flex flex-col items-center p-6 rounded-2xl border transition-all group ${
                 canForge
-                  ? 'bg-gradient-to-br from-amber-900/40 to-orange-950/40 border-amber-500/30 hover:border-amber-500/50'
+                  ? 'bg-[rgba(212,169,92,0.08)] border-[var(--gold-500)]/40 hover:border-[var(--gold-500)]/70'
                   : 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
               }`}
             >

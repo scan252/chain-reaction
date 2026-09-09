@@ -40,14 +40,10 @@ export function GameEndScreen({ isVictory = true }: GameEndScreenProps) {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-6"
       >
-        <h1 className={`text-4xl font-bold bg-gradient-to-r bg-clip-text text-transparent mb-2 ${
-          isVictory 
-            ? 'from-yellow-400 via-orange-400 to-red-400' 
-            : 'from-gray-400 via-gray-500 to-gray-600'
-        }`}>
-          {isVictory ? '🎉 冒险胜利 🎉' : '💀 冒险失败 💀'}
+        <h1 className={`display-title text-4xl ${isVictory ? '' : 'opacity-60'}`}>
+          {isVictory ? '冒险胜利' : '冒险失败'}
         </h1>
-        <p className="text-white/60">
+        <p className="text-[var(--text-secondary)] text-sm tracking-wider mt-2">
           {playerProfile?.name} 的征程已画上句号
         </p>
       </motion.div>
@@ -153,11 +149,7 @@ export function GameEndScreen({ isVictory = true }: GameEndScreenProps) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={handleRestart}
-        className={`px-8 py-3 rounded-xl font-bold text-lg text-white shadow-xl ${
-          isVictory
-            ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 shadow-purple-500/30'
-            : 'bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 shadow-gray-500/30'
-        }`}
+        className={`btn btn-xl ${isVictory ? 'btn-primary' : 'btn-secondary'}`}
       >
         {isVictory ? '再次冒险' : '重新开始'}
       </motion.button>

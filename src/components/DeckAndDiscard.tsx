@@ -14,7 +14,7 @@ export function DeckPile({ onClick }: { onClick?: () => void }) {
         <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.03)_4px,rgba(255,255,255,0.03)_8px)]" />
         <span className="text-blue-300 text-lg font-bold z-10 text-shadow">{drawPile.length}</span>
       </div>
-      <span className="text-[10px] text-blue-400/60 text-shadow-sm">牌库</span>
+      <span className="text-[10px] text-blue-400/60 ">牌库</span>
     </motion.div>
   );
 }
@@ -32,7 +32,7 @@ export function DiscardPile({ onClick }: { onClick?: () => void }) {
         <div className="absolute inset-0 bg-[repeating-linear-gradient(-45deg,transparent,transparent_4px,rgba(255,255,255,0.02)_4px,rgba(255,255,255,0.02)_8px)]" />
         <span className="text-gray-400 text-lg font-bold z-10 text-shadow">{discardPile.length}</span>
       </div>
-      <span className="text-[10px] text-gray-500/60 text-shadow-sm">弃牌堆</span>
+      <span className="text-[10px] text-gray-500/60 ">弃牌堆</span>
     </motion.div>
   );
 }
@@ -50,7 +50,7 @@ export function ExhaustPile({ onClick }: { onClick?: () => void }) {
         <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.03)_4px,rgba(255,255,255,0.03)_8px)]" />
         <span className="text-orange-300 text-lg font-bold z-10 text-shadow">{exhaustPile.length}</span>
       </div>
-      <span className="text-[10px] text-orange-500/60 text-shadow-sm">消耗堆</span>
+      <span className="text-[10px] text-orange-500/60 ">消耗堆</span>
     </motion.div>
   );
 }

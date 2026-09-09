@@ -73,6 +73,7 @@ export function GameArena() {
   const [skillMessage, setSkillMessage] = useState<string | null>(null);
   const [skillMessageKind, setSkillMessageKind] = useState<'success' | 'error'>('success');
   const [showSkillButton, setShowSkillButton] = useState(false);
+  const [selectedCardUuid, setSelectedCardUuid] = useState<string | null>(null);
   const characterRef = useRef<HTMLDivElement>(null);
   const skillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -138,6 +139,7 @@ export function GameArena() {
     if (activeData.type === 'hand-card' && overData.type === 'pipeline-slot') {
       const card = activeData.card as CardInstance;
       addToPipeline(card.uuid, overData.index as number);
+      setSelectedCardUuid(null);
     }
 
     if (activeData.type === 'pipeline-card' && overData.type === 'pipeline-slot') {
@@ -235,7 +237,7 @@ export function GameArena() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               onClick={requestSkip}
-              className="absolute top-4 right-4 z-30 px-4 py-2 rounded-lg text-sm font-bold bg-black/40 hover:bg-black/60 text-white/80 border border-white/10 cursor-pointer backdrop-blur-sm transition-colors"
+              className="absolute top-12 right-4 z-30 btn btn-secondary" style={{ height: 30, fontSize: 12, padding: '0 16px' }}
             >
               跳过 ⏭
             </motion.button>
@@ -302,7 +304,7 @@ export function GameArena() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleVictory}
-                    className="px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 cursor-pointer"
+                    className="btn btn-primary btn-xl"
                   >
                     领取奖励
                   </motion.button>
@@ -313,7 +315,7 @@ export function GameArena() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onBattleDefeat}
-                    className="px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg shadow-gray-500/30 cursor-pointer"
+                    className="btn btn-secondary btn-xl"
                   >
                     战败 - 查看结算
                   </motion.button>
@@ -327,55 +329,44 @@ export function GameArena() {
 
         {/* 执行序列区 */}
         <div className="shrink-0">
-          <PipelineBoard />
+          <PipelineBoard selectedUuid={selectedCardUuid} onSlotClick={(slot) => { if (selectedCardUuid) { addToPipeline(selectedCardUuid, slot); setSelectedCardUuid(null); } }} />
         </div>
 
         <div className="border-t border-white/5" />
 
-        {/* 底部区域：上横条 - 执行结算按钮 | 中横条 - 角色占位+HP/MP | 下横条 - 手牌区+牌堆 | 底横条 - 提示文字 */}
+        {/* 底部区域：行动按钮 | 角色面板 | 手牌区 | 提示 */}
         <div className="shrink-0 flex flex-col relative z-20">
-          {/* 上横条：执行结算 / 下一回合 按钮 */}
-          <div className="flex justify-center pt-2 pb-1">
+          {/* 行动按钮行 */}
+          <div className="flex justify-center items-center pt-1.5 pb-1 min-h-[46px]">
             {phase === 'PLAY' && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={handleExecute}
                 disabled={!hasCards}
-                className={`px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider transition-all ${
-                  hasCards
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`btn ${hasCards ? 'btn-danger' : 'btn-secondary'}`}
+                style={{ height: 40, letterSpacing: '0.35em', textIndent: '0.35em' }}
               >
                 执行结算
-              </motion.button>
+              </button>
             )}
 
             {showExecutionSummary && phase !== 'VICTORY' && phase !== 'DEFEAT' && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleNextTurn}
-                className="px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 cursor-pointer"
-              >
+              <button onClick={handleNextTurn} className="btn btn-primary" style={{ height: 40 }}>
                 下一回合
-              </motion.button>
+              </button>
             )}
           </div>
 
-          {/* 中横条：角色占位 + HP/MP（紧贴角色右侧） */}
-          <div className="flex items-center px-4 py-2 gap-4">
-            {/* 左侧：角色占位区 */}
+          {/* 角色面板 + 手牌 + 牌堆 */}
+          <div className="flex items-end px-4 pt-1 gap-4">
+            {/* 角色面板 */}
             <div
               ref={characterRef}
-              className="flex flex-col items-center justify-center shrink-0 w-[130px] relative"
+              className="shrink-0 relative panel p-2 flex items-center gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors"
               onClick={() => setShowSkillButton((v) => !v)}
+              title={skillUsedThisBattle ? '职业技能已使用' : '点击使用职业技能'}
             >
-              {/* 角色大占位区 */}
-              <div className="w-28 h-36 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-purple-800/20 border-2 border-dashed border-white/20 flex flex-col items-center justify-center relative cursor-pointer hover:border-white/40 transition-colors overflow-hidden">
+              {/* 头像 */}
+              <div className="w-16 h-20 rounded-md overflow-hidden border border-[var(--line-strong)] relative shrink-0">
                 {playerProfile && CLASS_IMAGES[playerProfile.class] ? (
                   <img
                     src={CLASS_IMAGES[playerProfile.class]}
@@ -383,119 +374,128 @@ export function GameArena() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-5xl">{playerProfile ? CLASS_ICONS[playerProfile.class] : '⚔️'}</span>
+                  <div className="w-full h-full flex items-center justify-center text-3xl bg-[var(--ink-700)]">
+                    {playerProfile ? CLASS_ICONS[playerProfile.class] : '⚔'}
+                  </div>
                 )}
               </div>
-              {/* 提示文字 - 放在头像下方 */}
-              <span className="mt-2 text-xs text-white/50 text-shadow-sm whitespace-nowrap">
-                {skillUsedThisBattle ? '技能已使用' : '点击上方头像使用技能'}
-              </span>
 
-              {/* 职业技能按钮 - 点击角色后浮现 */}
+              {/* 名字 + 条 */}
+              <div className="flex flex-col gap-1.5 w-[168px]">
+                {playerProfile && (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[15px] font-bold text-[var(--text-primary)] leading-none">{playerProfile.name}</span>
+                    <span className="text-[11px] text-[var(--text-muted)] tracking-[0.25em]">{CLASS_NAMES[playerProfile.class]}</span>
+                  </div>
+                )}
+                {/* 生命 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] w-6">生命</span>
+                  <div className="flex-1 h-[7px] rounded-sm bg-[var(--ink-900)] overflow-hidden border border-[var(--line)]">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#a83a34] to-[#d9564f]"
+                      animate={{ width: `${hpPercent}%` }}
+                    />
+                  </div>
+                  <span className="num text-[11px] font-bold text-[#e88a84] w-14 text-right">{playerHp}<span className="text-[var(--text-muted)]">/{playerMaxHp}</span></span>
+                </div>
+                {/* 灵力 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] w-6">灵力</span>
+                  <div className="flex-1 h-[7px] rounded-sm bg-[var(--ink-900)] overflow-hidden border border-[var(--line)]">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#6f4fc0] to-[#9d7be0]"
+                      animate={{ width: `${mpPercent}%` }}
+                    />
+                  </div>
+                  <span className="num text-[11px] font-bold text-[#b79ae8] w-14 text-right">{playerMp}<span className="text-[var(--text-muted)]">/{playerMaxMp}</span></span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.2em] num">回合 {turnNumber}</span>
+                  {/* 职业技能按钮 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (showSkillButton) { handleUseSkill(); } else { setShowSkillButton(true); }
+                    }}
+                    disabled={!canUseSkill}
+                    className={`text-[10px] px-2 py-0.5 rounded border tracking-[0.15em] transition-colors ${
+                      canUseSkill
+                        ? 'text-[var(--gold-300)] border-[var(--line-strong)] hover:bg-[rgba(212,169,92,0.12)] cursor-pointer'
+                        : 'text-[var(--text-muted)] border-[var(--line)] cursor-not-allowed'
+                    }`}
+                  >
+                    {playerProfile?.class === 'WARRIOR' ? '强化' : playerProfile?.class === 'PRIEST' ? '治疗' : '技能'}
+                    <span className="ml-1 opacity-70">-1灵力</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 职业技能确认浮层 */}
               <AnimatePresence>
                 {showSkillButton && playerProfile && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                    animate={{ opacity: 1, y: -50, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-30 panel p-3 w-52"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <motion.button
-                      whileHover={canUseSkill ? { scale: 1.05 } : {}}
-                      whileTap={canUseSkill ? { scale: 0.95 } : {}}
+                    <div className="text-xs font-bold text-[var(--gold-300)] tracking-wider mb-1">
+                      {playerProfile.class === 'WARRIOR' ? '职业技能 · 强化' : '职业技能 · 治疗'}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
+                      {playerProfile.class === 'WARRIOR'
+                        ? '将一张「强化」卡置入手牌：下一张牌效果 ×4（消耗）。'
+                        : '回复 20 点生命值（消耗）。'}
+                    </div>
+                    <button
                       onClick={handleUseSkill}
                       disabled={!canUseSkill}
-                      className={`py-2 px-3 rounded-lg font-bold text-xs transition-all whitespace-nowrap ${
-                        canUseSkill
-                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                          : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`btn w-full ${canUseSkill ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ height: 30, fontSize: 12 }}
                     >
-                      <span>
-                        {playerProfile.class === 'WARRIOR'
-                          ? '强化 (-1MP)'
-                          : playerProfile.class === 'PRIEST'
-                            ? '治疗 (-1MP)'
-                            : '技能'}
-                      </span>
-                    </motion.button>
+                      确 认 使 用
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* 角色右侧：HP/MP条（放大，紧贴） */}
-            <div className="flex flex-col justify-center gap-1.5 w-48">
-              {/* 玩家名称 */}
-              {playerProfile && (
-                <div className="text-center mb-1">
-                  <div className="text-white font-bold text-lg text-shadow">{playerProfile.name}</div>
-                  <div className="text-white/50 text-sm text-shadow-sm">{CLASS_NAMES[playerProfile.class]}</div>
-                </div>
-              )}
-              {/* HP - 放大 */}
-              <div className="flex items-center gap-2">
-                <span className="text-red-400 text-lg text-shadow">❤️</span>
-                <div className="flex-1 h-4 rounded-full bg-gray-800 overflow-hidden border border-white/10">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-red-600 to-red-400"
-                    animate={{ width: `${hpPercent}%` }}
-                  />
-                </div>
-                <span className="text-sm text-red-400 font-bold w-16 text-right text-shadow">{playerHp}/{playerMaxHp}</span>
-              </div>
-              {/* MP - 放大，在HP下方 */}
-              <div className="flex items-center gap-2">
-                <span className="text-purple-400 text-lg text-shadow">🔮</span>
-                <div className="flex-1 h-4 rounded-full bg-gray-800 overflow-hidden border border-white/10">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-purple-600 to-pink-400"
-                    animate={{ width: `${mpPercent}%` }}
-                  />
-                </div>
-                <span className="text-sm text-purple-400 font-bold w-16 text-right text-shadow">{playerMp}/{playerMaxMp}</span>
-              </div>
-              {/* 回合 */}
-              <div className="text-center text-xs text-white/40 mt-1 text-shadow-sm">回合 {turnNumber} · {isExecuting ? '结算中' : '行动阶段'}</div>
-
-              {/* Buff 显示 */}
+            {/* Buff 显示（角色面板右侧） */}
+            <div className="pb-3">
               <BuffDisplay />
             </div>
-          </div>
 
-          {/* 中横条：牌库(左) + 手牌区(中) + 弃牌堆(右) + 消耗堆(最右，可选) */}
-          <div className="flex items-center px-4 py-2">
-            <div className="flex items-center w-full">
-              {/* 左侧：牌库 */}
-              <div className="shrink-0 w-[100px] flex justify-center">
-                <DeckPile onClick={() => setShowDeckModal(true)} />
-              </div>
+            {/* 中间：手牌区 */}
+            <div className="flex-1 min-w-0 px-2">
+              <HandArea
+                selectedUuid={selectedCardUuid}
+                onSelectCard={(uuid) => setSelectedCardUuid((cur) => (cur === uuid ? null : uuid))}
+              />
+            </div>
 
-              {/* 中间：手牌区 */}
-              <div className="flex-1 min-w-0 px-4">
-                <HandArea />
-              </div>
-
-              {/* 右侧：弃牌堆 + 消耗堆 */}
-              <div className="shrink-0 flex items-center gap-4">
-                <DiscardPile onClick={() => setShowDiscardModal(true)} />
-                {exhaustPile.length > 0 && (
-                  <ExhaustPile onClick={() => setShowExhaustModal(true)} />
-                )}
-              </div>
+            {/* 右侧：牌堆 */}
+            <div className="shrink-0 flex items-center gap-3 pb-2">
+              <DeckPile onClick={() => setShowDeckModal(true)} />
+              <DiscardPile onClick={() => setShowDiscardModal(true)} />
+              {exhaustPile.length > 0 && (
+                <ExhaustPile onClick={() => setShowExhaustModal(true)} />
+              )}
             </div>
           </div>
 
-          {/* 下横条：操作按钮 + 提示文字 */}
-          <div className="flex flex-col items-center justify-center py-1 gap-1">
-            {/* 提示文字 - 只在非结算/胜利/失败状态显示 */}
-            {phase === 'PLAY' && (
-              <div className="flex items-center gap-2 text-sm text-white/50">
-                <span className="text-cyan-400/60 text-shadow">⚡</span>
-                <span className="text-shadow-sm">执行序列 - 从左到右触发连锁反应</span>
-                <span className="text-cyan-400/60 text-shadow">⚡</span>
-              </div>
+          {/* 提示行 */}
+          <div className="flex justify-center pb-1 pt-0.5">
+            {phase === 'PLAY' && !selectedCardUuid && (
+              <span className="text-[11px] text-[var(--text-muted)] tracking-[0.2em]">
+                拖拽或点选卡牌置入序列 · 序列从左至右结算 · 点击已放置的卡牌可取回
+              </span>
+            )}
+            {phase === 'PLAY' && selectedCardUuid && (
+              <span className="text-[11px] text-[var(--gold-300)] tracking-[0.2em] animate-pulse">
+                点击上方空槽位放置卡牌
+              </span>
             )}
           </div>
         </div>
@@ -520,7 +520,7 @@ export function GameArena() {
 
       {/* 拖拽覆盖层 */}
       <DragOverlay>
-        {activeCard ? <Card card={activeCard} isDragging /> : null}
+        {activeCard ? <div style={{ transform: 'rotate(4deg)' }}><Card card={activeCard} isDragging /></div> : null}
       </DragOverlay>
 
       {/* 弹窗 */}

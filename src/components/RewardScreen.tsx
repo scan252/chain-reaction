@@ -35,11 +35,11 @@ export function RewardScreen() {
         animate={{ y: 0, opacity: 1 }}
         className="text-center mb-8"
       >
-        <h1 className="text-3xl font-bold text-yellow-400 mb-2">战斗胜利！</h1>
-        <p className="text-lg text-yellow-300/70">
+        <h1 className="display-title text-4xl mb-3">战斗胜利</h1>
+        <p className="text-[15px] text-[var(--gold-300)] tracking-wider">
           获得 <span className="text-yellow-400 font-bold">{pendingReward.gold}</span> 💰 金币
         </p>
-        <p className="text-sm text-white/50 mt-2">
+        <p className="text-xs text-[var(--text-muted)] mt-2 tracking-[0.2em]">
           卡牌奖励 {pendingReward.currentRound} / {pendingReward.totalRounds}
         </p>
       </motion.div>
@@ -47,7 +47,7 @@ export function RewardScreen() {
       {/* 卡牌奖励 */}
       {!rewardCardCollected ? (
         <>
-          <p className="text-white/60 text-sm mb-4">
+          <p className="section-label mb-4">
             第 {pendingReward.currentRound} 轮 - 选择一张卡牌加入牌组：
           </p>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 px-2">

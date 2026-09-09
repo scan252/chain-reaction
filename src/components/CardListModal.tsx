@@ -29,12 +29,12 @@ export function CardListModal({ isOpen, onClose, title, cards }: CardListModalPr
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.85, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="relative bg-slate-900/95 border border-white/10 rounded-2xl p-6 max-w-xl w-[90%] max-h-[70vh] overflow-hidden flex flex-col"
+            className="relative panel p-6 max-w-xl w-[90%] max-h-[70vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 标题 */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">{title} ({cards.length})</h3>
+              <h3 className="text-base font-bold text-[var(--text-primary)] tracking-[0.2em]">{title} <span className="num text-[var(--text-muted)]">({cards.length})</span></h3>
               <button
                 onClick={onClose}
                 className="text-white/40 hover:text-white text-xl cursor-pointer"

@@ -117,7 +117,7 @@ export function RelicDisplay() {
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   return (
-    <div className="fixed top-4 left-4 z-40 flex flex-col gap-3">
+    <div className="fixed top-12 left-3 z-40 flex flex-col gap-2">
       {/* 遗物区域（无遗物时隐藏标签） */}
       {relics.length > 0 && (
         <div>

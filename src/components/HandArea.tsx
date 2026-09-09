@@ -4,7 +4,22 @@ import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import type { CardInstance } from '../types';
 
-function DraggableCard({ card, index }: { card: CardInstance; index: number }) {
+interface HandAreaProps {
+  selectedUuid?: string | null;
+  onSelectCard?: (uuid: string) => void;
+}
+
+function DraggableCard({
+  card,
+  index,
+  selected,
+  onSelect,
+}: {
+  card: CardInstance;
+  index: number;
+  selected: boolean;
+  onSelect?: (uuid: string) => void;
+}) {
   const phase = useGameStore((s) => s.phase);
   const globalDamageBonus = useGameStore((s) => s.globalDamageBonus);
 
@@ -23,7 +38,7 @@ function DraggableCard({ card, index }: { card: CardInstance; index: number }) {
 
   const totalCards = useGameStore((s) => s.hand.length);
   const midIndex = (totalCards - 1) / 2;
-  const rotation = (index - midIndex) * 2.5;
+  const rotation = (index - midIndex) * 2.2;
   const yOffset = Math.abs(index - midIndex) * 3;
 
   return (
@@ -32,43 +47,49 @@ function DraggableCard({ card, index }: { card: CardInstance; index: number }) {
       style={style}
       {...listeners}
       {...attributes}
-      initial={{ y: 100, opacity: 0 }}
+      initial={{ y: 80, opacity: 0 }}
       animate={{
-        y: yOffset,
-        opacity: 1,
+        y: selected ? -18 : yOffset,
+        opacity: isDragging ? 0.35 : 1,
         rotate: isDragging ? 0 : rotation,
       }}
       transition={{
         type: 'spring',
-        stiffness: 200,
-        damping: 20,
+        stiffness: 260,
+        damping: 24,
         delay: index * 0.03,
       }}
-      whileHover={{ y: -12, scale: 1.08, rotate: 0, zIndex: 50 }}
-      className="cursor-grab active:cursor-grabbing -ml-2 first:ml-0"
+      whileHover={{ y: selected ? -18 : -14, rotate: 0, zIndex: 50 }}
+      onClick={() => onSelect?.(card.uuid)}
+      className={`cursor-grab active:cursor-grabbing -ml-2 first:ml-0 ${selected ? 'z-40' : ''}`}
     >
-      <Card card={card} isDragging={isDragging} damageBonus={globalDamageBonus} />
+      <div className={selected ? 'ring-2 ring-[var(--gold-400)] rounded-xl shadow-[0_0_18px_rgba(212,169,92,0.45)]' : ''}>
+        <Card card={card} isDragging={isDragging} damageBonus={globalDamageBonus} />
+      </div>
     </motion.div>
   );
 }
 
-export function HandArea() {
+export function HandArea({ selectedUuid, onSelectCard }: HandAreaProps) {
   const hand = useGameStore((s) => s.hand);
   const phase = useGameStore((s) => s.phase);
 
   return (
-    <div className="flex flex-col items-center gap-0.5 pt-2">
-      {phase === 'PLAY' && hand.length > 0 && (
-        <span className="text-[10px] text-green-400/60">拖拽卡牌到上方槽位</span>
-      )}
-      <div className="flex items-end justify-center min-h-[200px] pb-1">
+    <div className="flex flex-col items-center gap-0.5">
+      <div className="flex items-end justify-center min-h-[136px]">
         <AnimatePresence mode="popLayout">
           {hand.map((card, i) => (
-            <DraggableCard key={card.uuid} card={card} index={i} />
+            <DraggableCard
+              key={card.uuid}
+              card={card}
+              index={i}
+              selected={selectedUuid === card.uuid}
+              onSelect={onSelectCard}
+            />
           ))}
         </AnimatePresence>
         {hand.length === 0 && phase === 'PLAY' && (
-          <span className="text-white/30 text-sm">手牌已清空</span>
+          <span className="text-xs text-[var(--text-muted)] tracking-[0.25em] py-8">手牌已出完</span>
         )}
       </div>
     </div>

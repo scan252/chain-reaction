@@ -61,14 +61,18 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
       style={{ backgroundImage: 'url(/pic/P1.webp)' }}
     >
       <motion.div
-        initial={{ y: -30, opacity: 0 }}
+        initial={{ y: -24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="text-center mb-10"
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="flex flex-col items-center mb-10"
       >
-        <h1 className="text-6xl font-bold tracking-widest bg-gradient-to-r from-cyan-400 via-purple-400 to-orange-400 bg-clip-text text-transparent mb-4">
-          创建角色
-        </h1>
-        <p className="text-white/40 text-xl">选择你的身份，开始冒险</p>
+        <div className="flex items-center gap-4 mb-4">
+          <span className="hairline-gold w-12" />
+          <span className="section-label">NEW&nbsp;JOURNEY</span>
+          <span className="hairline-gold w-12" />
+        </div>
+        <h1 className="display-title text-6xl leading-none">创建角色</h1>
+        <p className="mt-4 text-sm tracking-[0.4em] text-[var(--text-secondary)] pl-[0.4em]">选择你的身份，开始冒险</p>
       </motion.div>
 
       {/* 姓名输入 */}
@@ -109,8 +113,8 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
                 onClick={() => setSelectedClass(cls)}
                 className={`flex items-center gap-5 p-5 rounded-xl border transition-all text-left ${
                   isSelected
-                    ? 'bg-purple-500/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)]'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    ? 'bg-[rgba(212,169,92,0.12)] border-[var(--gold-500)]/60 shadow-[0_0_18px_rgba(212,169,92,0.2)]'
+                    : 'bg-white/[0.04] border-[var(--line)] hover:bg-white/[0.08]'
                 }`}
               >
                 <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center text-4xl shrink-0 overflow-hidden">
@@ -123,7 +127,7 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-white font-bold text-xl">{info.name}</span>
-                    <span className="text-sm text-purple-400 bg-purple-500/20 px-3 py-1 rounded">
+                    <span className="text-xs text-[#b79ae8] bg-[rgba(157,123,224,0.14)] px-2 py-0.5 rounded num">
                       MP上限: {CLASS_MAX_MP[cls]}
                     </span>
                   </div>
@@ -156,8 +160,8 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
                 onClick={() => setDifficulty(diff)}
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                   isSelected
-                    ? 'bg-red-500/20 border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.25)]'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    ? 'bg-[rgba(212,169,92,0.14)] border-[var(--gold-500)]/60 shadow-[0_0_18px_rgba(212,169,92,0.2)]'
+                    : 'bg-white/[0.04] border-[var(--line)] hover:bg-white/[0.08]'
                 }`}
               >
                 <span className="text-2xl">{info.icon}</span>
