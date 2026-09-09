@@ -9,18 +9,16 @@ import {
   applyRelicEffectsToContext,
   isAttackEffect,
   isShieldEffect,
-  cardKind,
 } from '../src/engine/effectRegistry';
 import { INITIAL_CONTEXT, AttackPattern, StatusEffectType } from '../src/types';
 import type {
   CardTemplate, CardInstance, Enemy, EnemyIntent, SlotStatus, ExecutionContext,
-  AttackPatternConfig, Difficulty, Archetype,
 } from '../src/types';
 import {
   ALL_CARD_POOL, buildStarterDeck, generateRewardCards, upgradeCard,
 } from '../src/data/cardData';
 import { generateEnemyIntent, generateGameMap, getEnemyForNode } from '../src/data/mapData';
-import { PLAYER, PIPELINE, KEYWORD, STATUS, REWARD } from '../src/config/balance';
+import { PLAYER, PIPELINE, KEYWORD, STATUS } from '../src/config/balance';
 
 const RUNS = Number(process.argv[2] ?? 400);
 
@@ -219,7 +217,7 @@ export function simulateBattle(
   let playerHp = playerHpIn;
   let globalDamageBonus = 0;
   let battleChainBonus = 0;
-  let battleBurnPaid: string[] = [];
+  const battleBurnPaid: string[] = [];
   let hpLostThisBattle = Math.max(0, playerMaxHp - playerHpIn);
   let turns = 0;
   let vulnerableStacks = 0;
@@ -350,7 +348,7 @@ export function simulateBattle(
 
     // 回合结束递减
     weakened = false; // 简化：衰弱只影响被施放的下回合（本模型已应用）
-    vulnerableStacks = vulnerableStacks; // 持续2回合简化为常驻（对双方略保守）
+    // 破绽层数跨回合常驻（对双方略保守的简化）
     for (const ss of slotStatuses) {
       ss.statusEffects = ss.statusEffects.map((e) => ({ ...e, duration: e.duration - 1 })).filter((e) => e.duration > 0);
     }
@@ -392,7 +390,7 @@ function simulateRun(strategy: Strategy, difficulty: Difficulty): RunOutcome {
   const map = generateGameMap();
   const diff = difficulty;
 
-  let deck = buildStarterDeck();
+  const deck = buildStarterDeck();
   let playerHp = PLAYER.MAX_HP;
   const hpCurve: number[] = [playerHp];
   const eliteHpLoss: number[] = [];
@@ -539,7 +537,7 @@ function main() {
 /** 流派专属局：初始就用该流派成型卡组 */
 function simulateRunArch(arch: Archetype, difficulty: Difficulty): boolean {
   const map = generateGameMap();
-  let deck = archetypeDeck(arch, 6);
+  const deck = archetypeDeck(arch, 6);
   let playerHp = PLAYER.MAX_HP;
 
   for (let layer = 0; layer < map.layers.length; layer++) {
