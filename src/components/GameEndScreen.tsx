@@ -29,7 +29,7 @@ export function GameEndScreen({ isVictory = true }: GameEndScreenProps) {
     <div 
       className="flex flex-col items-center justify-center min-h-screen px-4 py-8 overflow-y-auto"
       style={{
-        backgroundImage: 'url(/pic/P4_opacity_65.png)',
+        backgroundImage: 'url(/pic/P4_opacity_65.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

@@ -33,8 +33,8 @@ const CLASS_ICONS: Record<PlayerClass, string> = {
 };
 
 const CLASS_IMAGES: Record<PlayerClass, string | undefined> = {
-  WARRIOR: '/pic/pro/pro1.jpg',
-  PRIEST: '/pic/pro/pro2.jpg',
+  WARRIOR: '/pic/pro/pro1.webp',
+  PRIEST: '/pic/pro/pro2.webp',
 };
 
 export function GameArena() {
@@ -209,7 +209,7 @@ export function GameArena() {
       <div
         className="flex flex-col h-screen overflow-hidden relative"
         style={{
-          backgroundImage: 'url(/pic/P4_opacity_65.png)',
+          backgroundImage: 'url(/pic/P4_opacity_65.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

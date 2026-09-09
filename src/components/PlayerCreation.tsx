@@ -10,14 +10,14 @@ const CLASS_INFO: Record<PlayerClass, { name: string; icon: string; description:
     icon: '⚔️',
     description: '坚韧不拔的近战专家',
     skill: '技能：强化 - 在手牌中添加一张"强化"卡（下一张牌x4），消耗1点MP',
-    image: '/pic/pro/pro1.jpg',
+    image: '/pic/pro/pro1.webp',
   },
   PRIEST: {
     name: '牧师',
     icon: '✨',
     description: '神圣的治疗者',
     skill: '技能：治疗 - 回复自身20点生命值，消耗1点MP',
-    image: '/pic/pro/pro2.jpg',
+    image: '/pic/pro/pro2.webp',
   },
 };
 
@@ -47,7 +47,7 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
   return (
     <div
       className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat px-8 py-12"
-      style={{ backgroundImage: 'url(/pic/P1.jpg)' }}
+      style={{ backgroundImage: 'url(/pic/P1.webp)' }}
     >
       <motion.div
         initial={{ y: -30, opacity: 0 }}

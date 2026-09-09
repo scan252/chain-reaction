@@ -33,7 +33,7 @@ function TitleScreen({ onCreateCharacter }: TitleScreenProps) {
   return (
     <div
       className="flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat px-8"
-      style={{ backgroundImage: 'url(/pic/P1.jpg)' }}
+      style={{ backgroundImage: 'url(/pic/P1.webp)' }}
     >
       <motion.div
         initial={{ y: -30, opacity: 0 }}

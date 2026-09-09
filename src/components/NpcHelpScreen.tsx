@@ -65,7 +65,7 @@ export function NpcHelpScreen() {
     return (
       <div
         className="flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url(/pic/P2.jpg)' }}
+        style={{ backgroundImage: 'url(/pic/P2.webp)' }}
       >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -82,7 +82,7 @@ export function NpcHelpScreen() {
             className="w-48 h-64 rounded-2xl overflow-hidden border-4 border-white/30 shadow-2xl"
           >
             <img 
-              src="/pic/pro/pp.jpg" 
+              src="/pic/pro/pp.webp" 
               alt="神秘导师" 
               className="w-full h-full object-cover"
             />
@@ -137,7 +137,7 @@ export function NpcHelpScreen() {
   return (
     <div
       className="flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat overflow-hidden"
-      style={{ backgroundImage: 'url(/pic/P2.jpg)' }}
+      style={{ backgroundImage: 'url(/pic/P2.webp)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}

@@ -23,7 +23,7 @@ export function RewardScreen() {
     <div
       className="flex flex-col items-center justify-center h-screen px-4"
       style={{
-        backgroundImage: 'url(/pic/P2.jpg)',
+        backgroundImage: 'url(/pic/P2.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

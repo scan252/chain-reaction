@@ -204,7 +204,7 @@ export function MapScreen() {
     <div
       className="flex flex-col h-screen overflow-hidden"
       style={{
-        backgroundImage: 'url(/pic/P3.jpg)',
+        backgroundImage: 'url(/pic/P3.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -258,7 +258,7 @@ export function MapScreen() {
               >
                 {/* 吉祥物图片 */}
                 <img
-                  src="/pic/map/220513he5vqCdOtvYxTfGW.png"
+                  src="/pic/map/220513he5vqCdOtvYxTfGW.webp"
                   alt="冒险伙伴"
                   className="w-full h-full object-contain"
                 />
