@@ -26,6 +26,9 @@ import { useRunStore } from './runStore';
 import { SKILL_CARD } from '../data/cardData';
 import { TIMING, STATUS, CLASS, PLAYER, PIPELINE, JUICE, KEYWORD, REST as _REST } from '../config/balance';
 
+const GROWTH_CAP = KEYWORD.GLOBAL_GROWTH_CAP;
+const grow = (base: number, delta: number) => Math.min(GROWTH_CAP, base + delta);
+
 void _REST;
 
 // 回合总结信息
@@ -237,10 +240,13 @@ function buildContext(state: {
   weakened: boolean;
   attackedSlotCount: number;
   paidBurnCardIds?: string[];
+  relics?: string[];
 }): ExecutionContext {
   return {
     ...INITIAL_CONTEXT,
-    paidBurnCardIds: state.paidBurnCardIds ?? [],
+    paidBurnCardIds: [...(state.paidBurnCardIds ?? [])],
+    relicChainBonus: state.relics?.includes('CHAIN_ENGINE') ? 1 : 0,
+    relicBurnDiscount: state.relics?.includes('BURN_ENGINE') ? 1 : 0,
     slotArmors: new Array(state.pipelineLength).fill(0),
     slotDamageContributions: new Array(state.pipelineLength).fill(0),
     desperateHpLoss: state.desperateHpLoss,
@@ -357,7 +363,7 @@ export const useGameStore = create<GameState>()(
         while (needed > 0) {
           if (state.drawPile.length === 0) {
             if (state.discardPile.length === 0) break;
-            state.drawPile = shuffle(state.discardPile.map((c) => ({ ...c, uuid: uuidv4() })));
+            state.drawPile = shuffle([...state.discardPile]);
             state.discardPile = [];
           }
           const card = state.drawPile.pop();
@@ -450,7 +456,8 @@ export const useGameStore = create<GameState>()(
         hpLostThisBattle: state.hpLostThisBattle,
         weakened,
         attackedSlotCount,
-        paidBurnCardIds: state.battleBurnPaid,
+        paidBurnCardIds: [...state.battleBurnPaid],
+        relics: runState.relics as unknown as string[],
       });
 
       const resonanceRate = relics.includes('RESONANCE_ENGINE')
@@ -469,7 +476,8 @@ export const useGameStore = create<GameState>()(
     },
 
     executePipelineAction: async () => {
-      const { pipeline, slotStatuses, enemy, playerStatusEffects, playerHp, playerMaxHp } = get();
+      const { pipeline, slotStatuses, enemy, playerStatusEffects, playerHp, playerMaxHp, phase } = get();
+      if (phase !== 'PLAY') return; // 重入保护
       const cardsInPipeline = pipeline.filter((c): c is CardInstance => c !== null);
       if (cardsInPipeline.length === 0) return;
 
@@ -522,7 +530,8 @@ export const useGameStore = create<GameState>()(
         hpLostThisBattle: get().hpLostThisBattle,
         weakened,
         attackedSlotCount,
-        paidBurnCardIds: get().battleBurnPaid,
+        paidBurnCardIds: [...get().battleBurnPaid],
+        relics: runState.relics as unknown as string[],
       });
 
       // === 阶段一：管道执行 ===
@@ -554,7 +563,7 @@ export const useGameStore = create<GameState>()(
         // 超导是本场成长：结算到 battleChainBonus
         if (card.effectId === 'SUPERCONDUCTOR') {
           set((state) => {
-            state.battleChainBonus += card.baseValue;
+            state.battleChainBonus = Math.min(GROWTH_CAP, state.battleChainBonus + card.baseValue);
           });
         }
 
@@ -724,12 +733,16 @@ export const useGameStore = create<GameState>()(
         if (combatResult.riposteDamage > 0) {
           state.executionLog.push(`反击 → 附加伤害 +${combatResult.riposteDamage}`);
         }
+        if (combatResult.riposteGuardHits > 0) {
+          state.globalDamageBonus = grow(state.globalDamageBonus, 2 * combatResult.riposteGuardHits);
+          state.executionLog.push(`受身 → 被击 ${combatResult.riposteGuardHits} 次，全场动作牌本场 +${2 * combatResult.riposteGuardHits}`);
+        }
         if (combatResult.perfectBlockTrigger) {
-          state.globalDamageBonus += 4;
+          state.globalDamageBonus = grow(state.globalDamageBonus, 4);
           state.executionLog.push('黄金钟 → 全场动作牌本场 +4');
         }
         if (combatResult.resonanceTrigger) {
-          state.globalDamageBonus += 1;
+          state.globalDamageBonus = grow(state.globalDamageBonus, 1);
           state.executionLog.push('共鸣增幅 → 全场动作牌本场 +1');
         }
 
@@ -827,6 +840,8 @@ export const useGameStore = create<GameState>()(
         // ---- 胜负判定 ----
         if (state.enemy.currentHp <= 0) {
           state.phase = 'VICTORY';
+          // 同时击杀玩家时判胜利，并保证存活（否则下一场带着 0 HP 必败）
+          state.playerHp = Math.max(1, state.playerHp);
         } else if (state.playerHp <= 0) {
           state.phase = 'DEFEAT';
         } else {

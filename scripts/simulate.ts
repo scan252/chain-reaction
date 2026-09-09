@@ -297,8 +297,8 @@ export function simulateBattle(
 
     vulnerableStacks += combat.newVulnerableStacks;
 
-    if (combat.perfectBlockTrigger) globalDamageBonus += 4;
-    if (combat.resonanceTrigger) globalDamageBonus += 1;
+    if (combat.perfectBlockTrigger) globalDamageBonus = Math.min(12, globalDamageBonus + 4);
+    if (combat.resonanceTrigger) globalDamageBonus = Math.min(12, globalDamageBonus + 1);
 
     // 总伤害
     const totalDmg = ctx.accumulatedDamage + combat.reflectDamageBonus + combat.riposteDamage;
@@ -439,15 +439,15 @@ function simulateRun(strategy: Strategy, difficulty: Difficulty): RunOutcome {
       // 精英战后篝火：回复 15% 最大HP
       playerHp = Math.min(PLAYER.MAX_HP, playerHp + Math.floor(PLAYER.MAX_HP * 0.25));
       // 精英奖励：2张卡（保底1稀有）
-      const r1 = generateRewardCards(3, { guaranteeRare: true });
-      const r2 = generateRewardCards(3);
+      const r1 = generateRewardCards(3, { guaranteeRare: true, deckBias: deck });
+      const r2 = generateRewardCards(3, { deckBias: deck });
       deck.push({ ...pick(r1).card });
       if (Math.random() < 0.7) deck.push({ ...pick(r2).card });
     } else if (node.type === 'BATTLE') {
       // 普通奖励：平均2张卡
-      const r = generateRewardCards(3);
+      const r = generateRewardCards(3, { deckBias: deck });
       deck.push({ ...pick(r).card });
-      if (Math.random() < 1.0) deck.push({ ...pick(generateRewardCards(3)).card });
+      if (Math.random() < 1.0) deck.push({ ...pick(generateRewardCards(3, { deckBias: deck })).card });
     } else if (node.type === 'BOSS') {
       bossTurns = result.turns;
     }

@@ -117,7 +117,7 @@ const POOL_L5: EnemyTemplate[] = [
 const ELITE_L3: EnemyTemplate[] = [
   {
     name: '雷暴元素', emoji: '⛈️', image: '/pic/monster/b3.webp',
-    maxHp: 85, baseDamage: 9, damageVariance: 5, isElite: true,
+    maxHp: 100, baseDamage: 9, damageVariance: 5, isElite: true,
     // 蓄力→爆发 循环：考验防御峰值
     attackPatterns: [
       { pattern: AttackPattern.CHARGE_UP, buffValue: KEYWORD.CHARGE_UP_MULTIPLIER, weight: 60 },
@@ -126,7 +126,7 @@ const ELITE_L3: EnemyTemplate[] = [
   },
   {
     name: '熔岩巨兽', emoji: '🌋', image: '/pic/monster/b1.webp',
-    maxHp: 95, baseDamage: 8, damageVariance: 4, isElite: true,
+    maxHp: 110, baseDamage: 8, damageVariance: 4, isElite: true,
     // 全场燃烧压力：考验槽位经济
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 45 },
@@ -140,7 +140,7 @@ const ELITE_L3: EnemyTemplate[] = [
 const ELITE_L6: EnemyTemplate[] = [
   {
     name: '时之守卫', emoji: '⏳', image: '/pic/monster/b2.webp',
-    maxHp: 105, baseDamage: 10, damageVariance: 6, isElite: true,
+    maxHp: 130, baseDamage: 10, damageVariance: 6, isElite: true,
     // 锁槽+双打：考验序列运转
     attackPatterns: [
       { pattern: AttackPattern.SPATIAL_LOCK, weight: 45 },
@@ -150,7 +150,7 @@ const ELITE_L6: EnemyTemplate[] = [
   },
   {
     name: '腐蚀树妖', emoji: '🌳', image: '/pic/monster/m6.webp',
-    maxHp: 115, baseDamage: 7, damageVariance: 3, isElite: true,
+    maxHp: 145, baseDamage: 7, damageVariance: 3, isElite: true,
     // 高频多槽：考验平均格挡
     attackPatterns: [
       { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 50 },
@@ -164,7 +164,7 @@ const ELITE_L6: EnemyTemplate[] = [
 const BOSS_TEMPLATES: EnemyTemplate[] = [
   {
     name: '远古巨龙', emoji: '🐉', image: '/pic/monster/b1.webp',
-    maxHp: 180, baseDamage: 9, damageVariance: 7,
+    maxHp: 215, baseDamage: 10, damageVariance: 7,
     attackPatterns: [
       { pattern: AttackPattern.SINGLE, weight: 35 },
       { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 35 },
@@ -178,7 +178,7 @@ const BOSS_TEMPLATES: EnemyTemplate[] = [
   },
   {
     name: '深渊领主', emoji: '👹', image: '/pic/monster/b2.webp',
-    maxHp: 185, baseDamage: 10, damageVariance: 7,
+    maxHp: 230, baseDamage: 11, damageVariance: 7,
     attackPatterns: [
       { pattern: AttackPattern.SPATIAL_LOCK, weight: 35 },
       { pattern: AttackPattern.DOUBLE_STRIKE, weight: 40 },
@@ -192,7 +192,7 @@ const BOSS_TEMPLATES: EnemyTemplate[] = [
   },
   {
     name: '虚空之眼', emoji: '👁️', image: '/pic/monster/b3.webp',
-    maxHp: 170, baseDamage: 10, damageVariance: 9,
+    maxHp: 205, baseDamage: 10, damageVariance: 9,
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 40 },
       { pattern: AttackPattern.WEAK_POINT_SNIPE, weight: 35 },

@@ -207,6 +207,10 @@ export interface ExecutionContext {
   totalBurnHpCost: number;
   /** 本场战斗已付过焚身代价的卡（焚身每场只付一次） */
   paidBurnCardIds: string[];
+  /** 永动链轮遗物：全部连锁卡连锁 +N */
+  relicChainBonus: number;
+  /** 不死鸟羽遗物：焚身代价减免 */
+  relicBurnDiscount: number;
   /** 定位仪：共鸣加成 ×1.5 → ×2.25 */
   resonanceAmpMultiplier: number;
   /** 超导：连锁每次触发额外伤害（本场成长，经 globalDamageBonus 类似通道） */
@@ -223,6 +227,8 @@ export interface ExecutionContext {
   hpLostThisBattle: number;
   /** 亡命条件预计算：HP≤50% */
   deadlyEligible: boolean;
+  /** 亡命已武装（一次性乘区，攻击卡消费后复位） */
+  deadlyArmed?: boolean;
   /** 本回合被攻击槽位数（角斗士） */
   attackedSlotCount: number;
   /** 复仇誓言等：下一张攻击卡附加固定伤害 */
@@ -260,6 +266,8 @@ export interface SlotCombatResult {
   slotLinks: SlotLink[];
   /** 反击触发的总伤害（完美格挡奖励） */
   riposteDamage: number;
+  /** 受身槽被攻击次数（每场全局成长来源） */
+  riposteGuardHits: number;
   /** 黄金钟：本回合存在完美格挡 */
   perfectBlockTrigger: boolean;
 }
@@ -356,6 +364,8 @@ export const INITIAL_CONTEXT: ExecutionContext = {
   chainAttackCount: 0,
   totalBurnHpCost: 0,
   paidBurnCardIds: [],
+  relicChainBonus: 0,
+  relicBurnDiscount: 0,
   resonanceAmpMultiplier: 1,
   chainBonusPerTrigger: 0,
   nextCardChainBonus: 0,

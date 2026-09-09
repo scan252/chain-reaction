@@ -132,11 +132,6 @@ async function main() {
 
 
   // ===== 场景5: 难度缩放验证 =====
-  const diffTest = await page.evaluate(() => {
-    const w = window as unknown as { __runStore: { getState: () => { setDifficulty: (d: string) => void } } };
-    // 通过 mapData 直接验证
-    return true;
-  });
   const enemyScale = await page.evaluate(async () => {
     // 采样多只敌人验证缩放方向（同模板无法保证抽到同一只，改采样均值）
     const mapMod = await import('/src/data/mapData.ts');

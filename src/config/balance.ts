@@ -27,7 +27,7 @@ export const PLAYER = {
 export const PIPELINE = {
   INITIAL_SLOTS: 5,
   MAX_SLOTS: 8,
-  HAND_DRAW_COUNT: 8,
+  HAND_DRAW_COUNT: 9,
 } as const;
 
 /** 奖励 */
@@ -45,7 +45,7 @@ export const REWARD = {
   /** 精英难度稀有率提升 */
   ELITE_DIFF_RARITY_RARE: 0.12,
   /** 跳过卡牌奖励的补偿金币 */
-  SKIP_COMPENSATION_GOLD: 8,
+  SKIP_COMPENSATION_GOLD: 10,
 } as const;
 
 /** 商店 */
@@ -69,7 +69,7 @@ export const SHOP = {
 /** 休息 / 事件 */
 export const REST = {
   /** 休息回血比例 */
-  HEAL_RATIO: 0.35,
+  HEAL_RATIO: 0.4,
   /** 冥想回复 MP 数 */
   MEDITATE_MP: 2,
 } as const;
@@ -98,6 +98,8 @@ export const STATUS = {
 
 /** 关键词参数 */
 export const KEYWORD = {
+  /** 全局成长类效果的单场封顶（防"体积即乘法"指数膨胀） */
+  GLOBAL_GROWTH_CAP: 12,
   /** 共鸣：相邻同类互相加成比例 */
   RESONANCE_BONUS: 0.5,
   /** 永动链轮遗物的共鸣加成 */

@@ -35,8 +35,8 @@ function buildEventRewards(): EventReward[] {
     },
     {
       type: EventRewardType.HEAL_20_MP_1,
-      name: '恢复20%血+1MP',
-      description: '回复20%生命值和1点MP',
+      name: '恢复30%血+1MP',
+      description: '回复30%生命值和1点MP',
       icon: '💊',
     },
     {
@@ -324,9 +324,10 @@ export const useRunStore = create<RunState>()(
         ? REWARD.ELITE_DIFF_RARITY_RARE
         : REWARD.RARITY_ODDS.RARE;
 
-      // 生成两轮卡牌奖励（精英：每轮保底 1 稀有）
-      const round1Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds });
-      const round2Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds });
+      // 生成两轮卡牌奖励（精英：每轮保底 1 稀有；按卡组主流派定向供给）
+      const deck = get().masterDeck;
+      const round1Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds, deckBias: deck });
+      const round2Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds, deckBias: deck });
 
       let gold = REWARD.GOLD_MIN + Math.floor(Math.random() * REWARD.GOLD_VARIANCE);
       if (isElite) gold += REWARD.ELITE_GOLD_BONUS;
