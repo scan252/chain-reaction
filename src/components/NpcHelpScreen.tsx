@@ -2,9 +2,18 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
 import { Card } from './Card';
-import { RELICS, type RelicId } from '../types';
+import { RELICS, type CardTemplate, type RelicId } from '../types';
 import { generateRewardCards } from '../data/cardData';
-import type { CardTemplate } from '../types';
+
+// Fisher-Yates 洗牌（均匀分布）
+function shuffle<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export function NpcHelpScreen() {
   const [showReward, setShowReward] = useState(false);
@@ -13,15 +22,13 @@ export function NpcHelpScreen() {
   const [rewardCards] = useState(() => generateRewardCards(5).map(r => r.card));
   const [rewardRelics] = useState(() => {
     const allRelicIds = Object.keys(RELICS) as RelicId[];
-    const shuffled = [...allRelicIds].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 2);
+    return shuffle(allRelicIds).slice(0, 2);
   });
   
   const startNewRun = useRunStore((s) => s.startNewRun);
   const playerProfile = useRunStore((s) => s.playerProfile);
   const addRelic = useRunStore((s) => s.addRelic);
-  // 使用getState来获取最新状态，避免闭包问题
-  const runStore = useRunStore;
+  const addCardToMasterDeck = useRunStore((s) => s.addCardToMasterDeck);
 
   const handleAccept = () => {
     setShowReward(true);
@@ -41,11 +48,9 @@ export function NpcHelpScreen() {
   };
 
   const handleStartGame = () => {
-    // 添加选中的卡牌到卡组（使用store的set方法）
+    // 添加选中的卡牌到卡组
     if (selectedCard) {
-      runStore.setState((state) => {
-        state.masterDeck.push({ ...selectedCard });
-      });
+      addCardToMasterDeck(selectedCard);
     }
     // 添加选中的遗物
     if (selectedRelic) {
@@ -60,7 +65,7 @@ export function NpcHelpScreen() {
     return (
       <div
         className="flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url(/pic/P2.jpg)' }}
+        style={{ backgroundImage: 'url(/pic/P2.webp)' }}
       >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -74,10 +79,10 @@ export function NpcHelpScreen() {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="w-48 h-64 rounded-2xl overflow-hidden border-4 border-white/30 shadow-2xl"
+            className="w-44 h-60 rounded-xl overflow-hidden border border-[var(--line-strong)] shadow-2xl shadow-black/60"
           >
             <img 
-              src="/pic/pro/pp.jpg" 
+              src="/pic/pro/pp.webp" 
               alt="神秘导师" 
               className="w-full h-full object-cover"
             />
@@ -88,12 +93,12 @@ export function NpcHelpScreen() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white/10 border border-white/20 rounded-2xl px-8 py-6 max-w-md text-center"
+            className="panel panel-gold px-8 py-6 max-w-md text-center"
           >
-            <p className="text-white text-lg leading-relaxed">
+            <p className="text-[var(--gold-300)] text-lg leading-relaxed font-bold tracking-wider">
               "你似乎需要帮助..."
             </p>
-            <p className="text-white/60 text-sm mt-2">
+            <p className="text-[var(--text-secondary)] text-sm mt-2 leading-relaxed">
               年轻的 {playerProfile?.name}，前方的道路充满危险。
               我可以给予你一些援助，但选择权在你手中。
             </p>
@@ -110,7 +115,7 @@ export function NpcHelpScreen() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleAccept}
-              className="w-[200px] h-[60px] rounded-2xl font-bold text-2xl text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 flex items-center justify-center"
+              className="btn btn-primary btn-xl"
             >
               接受帮助
             </motion.button>
@@ -118,7 +123,7 @@ export function NpcHelpScreen() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleReject}
-              className="w-[200px] h-[60px] rounded-2xl font-bold text-2xl text-white/80 bg-white/10 border border-white/30 hover:bg-white/20 flex items-center justify-center"
+              className="btn btn-secondary btn-xl"
             >
               拒绝
             </motion.button>
@@ -132,7 +137,7 @@ export function NpcHelpScreen() {
   return (
     <div
       className="flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat overflow-hidden"
-      style={{ backgroundImage: 'url(/pic/P2.jpg)' }}
+      style={{ backgroundImage: 'url(/pic/P2.webp)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -158,7 +163,7 @@ export function NpcHelpScreen() {
                 onClick={() => handleSelectCard(card)}
                 className={`relative transition-all ${
                   selectedCard?.templateId === card.templateId
-                    ? 'ring-4 ring-yellow-400 rounded-xl'
+                    ? 'ring-2 ring-[var(--gold-400)] rounded-xl shadow-[0_0_20px_rgba(212,169,92,0.4)]'
                     : ''
                 }`}
               >
@@ -167,7 +172,7 @@ export function NpcHelpScreen() {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-black font-bold text-sm"
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--gold-400)] rounded-full flex items-center justify-center text-black font-bold text-sm"
                   >
                     ✓
                   </motion.div>
@@ -180,7 +185,7 @@ export function NpcHelpScreen() {
         {/* 遗物选择 */}
         <div className="mb-10">
           <h3 className="text-white/70 text-lg mb-6 text-center">选择一个遗物</h3>
-          <div className="flex justify-center gap-8">
+          <div className="flex justify-center gap-6 items-stretch">
             {rewardRelics.map((relicId, index) => {
               const relic = RELICS[relicId];
               return (
@@ -192,24 +197,24 @@ export function NpcHelpScreen() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelectRelic(relicId)}
-                  className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
+                  className={`relative flex flex-col items-center gap-2.5 p-5 w-[210px] rounded-xl border transition-all ${
                     selectedRelic === relicId
-                      ? 'bg-amber-900/50 border-amber-400'
-                      : 'bg-white/5 border-white/20 hover:bg-white/10'
+                      ? 'bg-[rgba(212,169,92,0.12)] border-[var(--gold-500)]/60'
+                      : 'bg-white/[0.04] border-[var(--line)] hover:bg-white/[0.08]'
                   }`}
                 >
-                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-4xl">
+                  <div className="w-14 h-14 rounded-lg bg-[#12161f] border border-[var(--line-strong)] flex items-center justify-center text-2xl">
                     {relic.icon}
                   </div>
-                  <div className="text-white font-bold text-lg">{relic.name}</div>
-                  <div className="text-white/50 text-sm max-w-[180px] text-center">
+                  <div className="text-[var(--text-primary)] font-bold text-[15px]">{relic.name}</div>
+                  <div className="text-[var(--text-secondary)] text-xs leading-relaxed text-center flex-1">
                     {relic.description}
                   </div>
                   {selectedRelic === relicId && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center text-black font-bold text-sm"
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--gold-400)] rounded-full flex items-center justify-center text-black font-bold text-sm"
                     >
                       ✓
                     </motion.div>
@@ -230,11 +235,7 @@ export function NpcHelpScreen() {
             whileTap={{ scale: 0.95 }}
             onClick={handleStartGame}
             disabled={!selectedCard || !selectedRelic}
-            className={`w-[200px] h-[60px] rounded-2xl font-bold text-2xl transition-all flex items-center justify-center ${
-              selectedCard && selectedRelic
-                ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 text-white shadow-xl shadow-purple-500/30'
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
+            className={`btn btn-xl ${selectedCard && selectedRelic ? 'btn-primary' : 'btn-secondary'}`}
           >
             开始冒险
           </motion.button>

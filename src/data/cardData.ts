@@ -1,267 +1,238 @@
 import { v4 as uuidv4 } from 'uuid';
-import { type CardTemplate, CardType, type RewardCard, type ShopItem, ShopItemType, REMOVE_CARD_COST } from '../types';
+import {
+  type CardTemplate, CardType,
+  type RewardCard, type ShopItem, ShopItemType,
+  Rarity, Archetype,
+} from '../types';
+import { REWARD, SHOP, FORGE } from '../config/balance';
 
-// rewardWeight 说明：
-//   数值越大，奖励三选一时出现概率越高
-//   0 = 不会出现在奖励池中（仅初始牌组或商店获取）
-//   10 = 普通  20 = 常见  5 = 稀有  2 = 极稀有
+// ============================================================
+// v2 卡池：38 张（通用 10 + 四流派各 7） + 特殊卡 2
+// 数值依据 docs/BALANCE.md
+// ============================================================
 
-export const CARD_TEMPLATES: CardTemplate[] = [
-  {
-    templateId: 'atk_001',
-    name: '火球',
-    type: CardType.ACTION,
-    baseValue: 6,
-    effectId: 'DEAL_DAMAGE',
-    artPath: '/assets/cards/atk_001.png',
-    description: '造成 6 点伤害',
-    color: '#e74c3c',
-    rewardWeight: 20,
-  },
-  {
-    templateId: 'def_002',
-    name: '冰盾',
-    type: CardType.ACTION,
-    baseValue: 8,
-    effectId: 'GAIN_ARMOR',
-    artPath: '/assets/cards/def_002.png',
-    description: '获得 8 点护甲',
-    color: '#3498db',
-    rewardWeight: 12,
-  },
-  {
-    templateId: 'mod_001',
-    name: 'X2',
-    type: CardType.MODIFIER,
-    baseValue: 2,
-    effectId: 'MULTIPLY_NEXT',
-    artPath: '/assets/cards/mod_001.png',
-    description: '下一张牌效果 x2',
-    color: '#9b59b6',
-    rewardWeight: 15,
-  },
+/** 简写构造器 */
+function card(t: Partial<CardTemplate> & {
+  templateId: string; name: string; type: CardType; baseValue: number; effectId: string; description: string;
+}): CardTemplate {
+  return {
+    color: '#94a3b8',
+    rarity: Rarity.COMMON,
+    archetype: Archetype.GENERIC,
+    ...t,
+  } as CardTemplate;
+}
+
+// ---------- 通用（10） ----------
+const GENERIC_CARDS: CardTemplate[] = [
+  card({ templateId: 'atk_stone', name: '小石弹', type: CardType.ACTION, baseValue: 6, effectId: 'DEAL_DAMAGE', description: '造成 6 点伤害', color: '#a8a29e' }),
+  card({ templateId: 'atk_fire', name: '火球', type: CardType.ACTION, baseValue: 8, effectId: 'DEAL_DAMAGE', description: '造成 8 点伤害', color: '#e74c3c' }),
+  card({ templateId: 'atk_frost', name: '寒冰箭', type: CardType.ACTION, baseValue: 7, effectId: 'DEAL_DAMAGE', description: '造成 7 点伤害', color: '#60a5fa' }),
+  card({ templateId: 'atk_thunder', name: '雷击', type: CardType.ACTION, baseValue: 11, effectId: 'DEAL_DAMAGE', description: '造成 11 点伤害', color: '#facc15', rarity: Rarity.UNCOMMON }),
+  card({ templateId: 'atk_meteor', name: '陨石术', type: CardType.ACTION, baseValue: 16, effectId: 'DEAL_DAMAGE', description: '造成 16 点伤害', color: '#d35400', rarity: Rarity.UNCOMMON }),
+  card({ templateId: 'def_wood', name: '木盾', type: CardType.ACTION, baseValue: 7, effectId: 'GAIN_ARMOR', description: '获得 7 点护盾', color: '#84cc16' }),
+  card({ templateId: 'def_iron', name: '铁壁', type: CardType.ACTION, baseValue: 10, effectId: 'GAIN_ARMOR', description: '获得 10 点护盾', color: '#64748b' }),
+  card({ templateId: 'def_holy', name: '圣盾术', type: CardType.ACTION, baseValue: 14, effectId: 'GAIN_ARMOR', description: '获得 14 点护盾', color: '#fbbf24', rarity: Rarity.UNCOMMON }),
+  card({ templateId: 'mod_x2', name: 'X2', type: CardType.MODIFIER, baseValue: 2, effectId: 'MULTIPLY_NEXT', description: '下一张牌效果 ×2', color: '#9b59b6' }),
+  card({ templateId: 'mod_triple', name: '三连发', type: CardType.MODIFIER, baseValue: 3, effectId: 'REPEAT_NEXT', description: '下一张牌触发 3 次', color: '#c084fc', rarity: Rarity.UNCOMMON }),
 ];
 
-// 奖励/商店额外卡牌池
-export const EXTRA_CARD_TEMPLATES: CardTemplate[] = [
-  {
-    templateId: 'atk_005',
-    name: '陨石术',
-    type: CardType.ACTION,
-    baseValue: 15,
-    effectId: 'DEAL_DAMAGE',
-    artPath: '/assets/cards/atk_005.png',
-    description: '造成 15 点伤害',
-    color: '#d35400',
-    rewardWeight: 3,
-  },
-  {
-    templateId: 'def_004',
-    name: '神圣护盾',
-    type: CardType.ACTION,
-    baseValue: 12,
-    effectId: 'GAIN_ARMOR',
-    artPath: '/assets/cards/def_004.png',
-    description: '获得 12 点护甲',
-    color: '#1abc9c',
-    rewardWeight: 5,
-  },
-  {
-    templateId: 'mod_004',
-    name: '连锁反应',
-    type: CardType.MODIFIER,
-    baseValue: 4,
-    effectId: 'REPEAT_NEXT_SHIELD',
-    artPath: '/assets/cards/mod_004.png',
-    description: '下一张盾牌牌触发 4 次',
-    color: '#e91e63',
-    rewardWeight: 2,
-  },
-  {
-    templateId: 'atk_006',
-    name: '毒雾',
-    type: CardType.ACTION,
-    baseValue: 7,
-    effectId: 'DEAL_DAMAGE',
-    artPath: '/assets/cards/atk_006.png',
-    description: '造成 7 点伤害',
-    color: '#27ae60',
-    rewardWeight: 15,
-  },
-  {
-    templateId: 'mod_005',
-    name: '多次打击',
-    type: CardType.MODIFIER,
-    baseValue: 4,
-    effectId: 'REPEAT_NEXT_ATTACK',
-    artPath: '/assets/cards/mod_005.png',
-    description: '下一张攻击牌触发 4 次',
-    color: '#ff5722',
-    rewardWeight: 5,
-  },
-  {
-    templateId: 'mod_009',
-    name: '均衡术',
-    type: CardType.MODIFIER,
-    baseValue: 3,
-    effectId: 'REPEAT_NEXT',
-    artPath: '/assets/cards/mod_009.png',
-    description: '下一张牌触发 3 次',
-    color: '#00b894',
-    rewardWeight: 10,
-  },
-  // --- 槽位攻防 2.0 新卡牌 ---
-  {
-    templateId: 'atk_007',
-    name: '移形换影',
-    type: CardType.ACTION,
-    baseValue: 4,
-    effectId: 'PHASE_SHIFT',
-    artPath: '/assets/cards/atk_007.png',
-    description: '造成 4 点伤害，被攻击时伤害转移至左侧槽位',
-    color: '#6c5ce7',
-    rewardWeight: 8,
-  },
-  {
-    templateId: 'def_005',
-    name: '镜面反射',
-    type: CardType.ACTION,
-    baseValue: 6,
-    effectId: 'MIRROR_REFLECT',
-    artPath: '/assets/cards/def_005.png',
-    description: '获得 6 点护甲，若此格完全格挡伤害，结算时总伤害+此格护盾值',
-    color: '#00cec9',
-    rewardWeight: 8,
-  },
-  {
-    templateId: 'mod_006',
-    name: '共鸣增幅',
-    type: CardType.MODIFIER,
-    baseValue: 2,
-    effectId: 'RESONANCE_AMP_V2',
-    artPath: '/assets/cards/mod_006.png',
-    description: '下一张牌 x2，若下张牌为盾且完美格挡，卡组中所有动作牌基础数值在本场战斗中+1',
-    color: '#fdcb6e',
-    rewardWeight: 5,
-  },
-  {
-    templateId: 'mod_007',
-    name: '背水一战',
-    type: CardType.MODIFIER,
-    baseValue: 0,
-    effectId: 'DESPERATE_STRIKE',
-    artPath: '/assets/cards/mod_007.png',
-    description: '下一张攻击卡增加值 = 本回合将损失的血量；本回合受到伤害生命值最多扣到1',
-    color: '#d63031',
-    rewardWeight: 3,
-  },
-  {
-    templateId: 'skill_001',
-    name: '强化',
-    type: CardType.MODIFIER,
-    baseValue: 4,
-    effectId: 'MULTIPLY_NEXT',
-    artPath: '/assets/cards/skill_001.png',
-    description: '下一张牌效果 x4',
-    color: '#e17055',
-    rewardWeight: 0, // 不出现在奖励池
-  },
-  {
-    templateId: 'mod_008',
-    name: '连锁防线',
-    type: CardType.MODIFIER,
-    baseValue: 0,
-    effectId: 'CHAIN_DEFENSE',
-    artPath: '/assets/cards/mod_008.png',
-    description: '前面所有槽位中最高的护盾值加到每一个槽位上',
-    color: '#0984e3',
-    rewardWeight: 5,
-  },
+// ---------- 连锁流（7） ----------
+const CHAIN_CARDS: CardTemplate[] = [
+  card({ templateId: 'ch_arc', name: '电弧', type: CardType.ACTION, baseValue: 5, effectId: 'DEAL_DAMAGE', chain: 1, description: '5 伤害 连锁1：左侧每有一张已执行的攻击牌，多触发 1 次', color: '#fde047', archetype: Archetype.CHAIN }),
+  card({ templateId: 'ch_blade', name: '链刃', type: CardType.ACTION, baseValue: 4, effectId: 'CHAIN_BLADE', chain: 1, description: '4 伤害 连锁1；每次连锁触发额外获得 1 护盾', color: '#fbbf24', archetype: Archetype.CHAIN }),
+  card({ templateId: 'ch_reactor', name: '反应堆盾', type: CardType.ACTION, baseValue: 4, effectId: 'REACTOR_SHIELD', description: '4 护盾；本回合每有一张已执行的攻击牌，额外 +3 护盾', color: '#a3e635', archetype: Archetype.CHAIN }),
+  card({ templateId: 'ch_avalanche', name: '雪崩', type: CardType.ACTION, baseValue: 3, effectId: 'DEAL_DAMAGE', chain: 2, description: '3 伤害 连锁2：排序越深滚雪球越狠', color: '#f59e0b', rarity: Rarity.UNCOMMON, archetype: Archetype.CHAIN }),
+  card({ templateId: 'ch_super', name: '超导', type: CardType.MODIFIER, baseValue: 2, effectId: 'SUPERCONDUCTOR', description: '本场战斗中，连锁每次触发 +2 伤害', color: '#fde68a', rarity: Rarity.UNCOMMON, archetype: Archetype.CHAIN }),
+  card({ templateId: 'ch_imbue', name: '链化', type: CardType.MODIFIER, baseValue: 2, effectId: 'CHAIN_IMBUE', description: '下一张牌获得 连锁2', color: '#fcd34d', rarity: Rarity.UNCOMMON, archetype: Archetype.CHAIN }),
+  card({ templateId: 'ch_storm', name: '链式风暴', type: CardType.ACTION, baseValue: 5, effectId: 'CHAIN_STORM', chain: 2, description: '5 伤害 连锁2；若它之前已有 ≥3 张攻击牌执行，伤害再 ×2', color: '#f97316', rarity: Rarity.RARE, archetype: Archetype.CHAIN }),
 ];
 
-// 禁忌卡牌 - 只能通过吉祥物隐藏对话获取
-export const FORBIDDEN_CARD: CardTemplate = {
-  templateId: 'forbidden_001',
-  name: '我的王之力',
-  type: CardType.ACTION,
-  baseValue: 999,
-  effectId: 'DEAL_DAMAGE',
-  artPath: '/assets/cards/forbidden_001.png',
-  description: '造成 999 点伤害',
-  color: '#8b0000', // 深红色
-  rewardWeight: 0, // 不会出现在奖励池
-};
+// ---------- 共鸣流（7） ----------
+const RESONANCE_CARDS: CardTemplate[] = [
+  card({ templateId: 're_fire', name: '双生火', type: CardType.ACTION, baseValue: 5, effectId: 'DEAL_DAMAGE', resonance: true, description: '5 伤害 共鸣：与相邻同类卡互相 +50%', color: '#fb7185', archetype: Archetype.RESONANCE }),
+  card({ templateId: 're_ice', name: '双生冰', type: CardType.ACTION, baseValue: 5, effectId: 'GAIN_ARMOR', resonance: true, description: '5 护盾 共鸣：与相邻同类卡互相 +50%', color: '#7dd3fc', archetype: Archetype.RESONANCE }),
+  card({ templateId: 're_hammer', name: '和弦锤', type: CardType.ACTION, baseValue: 7, effectId: 'DEAL_DAMAGE', resonance: true, description: '7 伤害 共鸣', color: '#f472b6', rarity: Rarity.UNCOMMON, archetype: Archetype.RESONANCE }),
+  card({ templateId: 're_magnet', name: '磁力盾', type: CardType.ACTION, baseValue: 6, effectId: 'MAGNETIC_SHIELD', description: '6 护盾；把等量护盾复制到相邻的无护盾槽位', color: '#38bdf8', rarity: Rarity.UNCOMMON, archetype: Archetype.RESONANCE }),
+  card({ templateId: 're_tuner', name: '定位仪', type: CardType.MODIFIER, baseValue: 0, effectId: 'RESONANCE_TUNER', description: '本回合共鸣加成 ×2.5（+50% → +125%）', color: '#22d3ee', rarity: Rarity.UNCOMMON, archetype: Archetype.RESONANCE }),
+  card({ templateId: 're_feed', name: '谐振腔', type: CardType.MODIFIER, baseValue: 1, effectId: 'RESONANCE_FEED', description: '本回合每有一对共鸣相邻，全场动作牌本场 +1', color: '#67e8f9', rarity: Rarity.UNCOMMON, archetype: Archetype.RESONANCE }),
+  card({ templateId: 're_finale', name: '大合奏', type: CardType.ACTION, baseValue: 10, effectId: 'GRAND_FINALE', resonance: true, description: '10 伤害 共鸣；左右均为攻击卡时再 +10', color: '#e879f9', rarity: Rarity.RARE, archetype: Archetype.RESONANCE }),
+];
 
-export const ALL_CARD_POOL = [...CARD_TEMPLATES, ...EXTRA_CARD_TEMPLATES];
+// ---------- 反击流（7） ----------
+const RIPOSTE_CARDS: CardTemplate[] = [
+  card({ templateId: 'ri_thorn', name: '荆棘甲', type: CardType.ACTION, baseValue: 6, effectId: 'GAIN_ARMOR', riposte: 9, description: '6 护盾 反击9：本槽被攻击且未掉血时，附加 9 伤害', color: '#fb923c', archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_wall', name: '受身', type: CardType.ACTION, baseValue: 6, effectId: 'RIPOSTE_GUARD', description: '6 护盾；本槽每被攻击一次，全场动作牌本场 +2', color: '#94a3b8', archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_mirror', name: '镜面反射', type: CardType.ACTION, baseValue: 12, effectId: 'MIRROR_REFLECT', description: '12 护盾；本槽完全格挡时，反弹等量盾值的伤害', color: '#f87171', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_shift', name: '斗转星移', type: CardType.ACTION, baseValue: 5, effectId: 'PHASE_SHIFT', description: '5 伤害；本槽被攻击时，伤害转移至左侧槽位', color: '#c084fc', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_gladiator', name: '角斗士', type: CardType.MODIFIER, baseValue: 4, effectId: 'GLADIATOR', description: '本回合每有 1 个槽位将被攻击，总伤害 +4', color: '#fca5a5', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_revenge', name: '复仇誓言', type: CardType.MODIFIER, baseValue: 3, effectId: 'REVENGE_VOW', description: '本场每失去 10 HP，下一张攻击 +3', color: '#ef4444', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_bell', name: '黄金钟', type: CardType.ACTION, baseValue: 9, effectId: 'GOLDEN_BELL', description: '9 护盾；本回合任意槽完全格挡时，全场动作牌本场 +2（可叠加）', color: '#fcd34d', rarity: Rarity.RARE, archetype: Archetype.RIPOSTE }),
+];
 
-// 初始牌库：6张火球 + 6张冰盾 + 3张X2
+// ---------- 焚身流（7） ----------
+const BURN_CARDS: CardTemplate[] = [
+  card({ templateId: 'bu_price', name: '血偿', type: CardType.ACTION, baseValue: 20, effectId: 'BLOOD_PRICE', burnCost: 3, description: '焚身3：20 伤害（本场首次打出付 3 HP，重复打出效果 ×0.6）', color: '#dc2626', archetype: Archetype.BURN }),
+  card({ templateId: 'bu_ward', name: '燃烧意志', type: CardType.ACTION, baseValue: 11, effectId: 'BURN_WARD', burnCost: 2, description: '焚身2：11 护盾（本场首次打出失去 2 HP）', color: '#b91c1c', archetype: Archetype.BURN }),
+  card({ templateId: 'bu_rage', name: '血怒', type: CardType.MODIFIER, baseValue: 2, effectId: 'BLOOD_RAGE', description: '本回合每有一张焚身卡，全场动作牌本场 +2', color: '#ea580c', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
+  card({ templateId: 'bu_scorch', name: '焦土', type: CardType.ACTION, baseValue: 12, effectId: 'SCORCH', description: '12 伤害；点燃此槽 3 回合（该槽数值 +100%）', color: '#f97316', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
+  card({ templateId: 'bu_deadly', name: '亡命', type: CardType.MODIFIER, baseValue: 0, effectId: 'DEADLY', description: '若 HP ≤ 50%，本回合后续攻击 ×1.5', color: '#7f1d1d', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
+  card({ templateId: 'bu_sacrifice', name: '献祭', type: CardType.ACTION, baseValue: 4, effectId: 'SACRIFICE', burnCost: 4, description: '焚身4：全场动作牌本场 +4（首次打出付 4 HP，重复只加不扣）', color: '#991b1b', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
+  card({ templateId: 'bu_phoenix', name: '不死鸟', type: CardType.ACTION, baseValue: 32, effectId: 'PHOENIX_STRIKE', burnCost: 6, description: '焚身6：32 伤害；HP≤10 时 47（首次打出失去 6 HP）', color: '#fbbf24', rarity: Rarity.RARE, archetype: Archetype.BURN }),
+];
+
+// ---------- 保留的特殊卡 ----------
+/** 勇士技能卡（不进奖励池，打出后消耗） */
+export const SKILL_CARD: CardTemplate = card({
+  templateId: 'skill_001', name: '强化', type: CardType.MODIFIER, baseValue: 4, effectId: 'MULTIPLY_NEXT',
+  description: '下一张牌效果 ×4（消耗）', color: '#e17055',
+});
+
+/** 禁忌卡：吉祥物彩蛋（不进奖励池，整局限 1 张） */
+export const FORBIDDEN_CARD: CardTemplate = card({
+  templateId: 'forbidden_001', name: '我的王之力', type: CardType.ACTION, baseValue: 999, effectId: 'DEAL_DAMAGE',
+  description: '造成 999 点伤害', color: '#8b0000', rarity: Rarity.RARE,
+});
+
+/** 奖励/商店卡池 */
+export const ALL_CARD_POOL: CardTemplate[] = [
+  ...GENERIC_CARDS, ...CHAIN_CARDS, ...RESONANCE_CARDS, ...RIPOSTE_CARDS, ...BURN_CARDS,
+];
+
+/** 按 templateId 查模板 */
+export const TEMPLATE_INDEX: Record<string, CardTemplate> = Object.fromEntries(
+  [...ALL_CARD_POOL, SKILL_CARD, FORBIDDEN_CARD].map((c) => [c.templateId, c]),
+);
+
+// ============================================================
+// 升级（锻造）
+// ============================================================
+
+/** 锻造一张卡：数值 +40%；连锁+1 / 反击+3 */
+export function upgradeCard(c: CardTemplate): CardTemplate {
+  const u: CardTemplate = { ...c, upgraded: true };
+  if (u.chain) u.chain += 1;
+  if (u.riposte) u.riposte += FORGE.RIPOSTE_STEP;
+  if (u.baseValue > 0) u.baseValue = Math.floor(u.baseValue * FORGE.VALUE_MULTIPLIER);
+  u.name = c.name + '+';
+  if (u.type === CardType.ACTION) u.description = describeUpgraded(u);
+  return u;
+}
+
+function describeUpgraded(u: CardTemplate): string {
+  const burnTxt = u.burnCost ? `焚身${u.burnCost}：` : '';
+  const chainTxt = u.chain ? ` 连锁${u.chain}` : '';
+  const resoTxt = u.resonance ? ' 共鸣' : '';
+  const ripTxt = u.riposte ? ` 反击${u.riposte}` : '';
+  if (u.effectId === 'GAIN_ARMOR' || u.effectId === 'MAGNETIC_SHIELD' || u.effectId === 'MIRROR_REFLECT' || u.effectId === 'GOLDEN_BELL' || u.effectId === 'BURN_WARD') {
+    return `${burnTxt}${u.baseValue} 护盾${chainTxt}${resoTxt}${ripTxt}`;
+  }
+  return `${burnTxt}造成 ${u.baseValue} 点伤害${chainTxt}${resoTxt}`;
+}
+
+// ============================================================
+// 初始卡组：5 小石弹 + 5 木盾 + 2 X2
+// ============================================================
+
 export function buildStarterDeck(): CardTemplate[] {
   const deck: CardTemplate[] = [];
-  const fireball = CARD_TEMPLATES.find((t) => t.templateId === 'atk_001')!;
-  const iceShield = CARD_TEMPLATES.find((t) => t.templateId === 'def_002')!;
-  const double = CARD_TEMPLATES.find((t) => t.templateId === 'mod_001')!;
-
-  for (let i = 0; i < 6; i++) deck.push({ ...fireball });
-  for (let i = 0; i < 6; i++) deck.push({ ...iceShield });
-  for (let i = 0; i < 3; i++) deck.push({ ...double });
-
+  const stone = TEMPLATE_INDEX['atk_stone'];
+  const wood = TEMPLATE_INDEX['def_wood'];
+  const x2 = TEMPLATE_INDEX['mod_x2'];
+  for (let i = 0; i < 5; i++) deck.push({ ...stone });
+  for (let i = 0; i < 5; i++) deck.push({ ...wood });
+  for (let i = 0; i < 2; i++) deck.push({ ...x2 });
   return deck;
 }
 
-// 加权随机抽取（不重复）
-function weightedSample(pool: CardTemplate[], count: number): CardTemplate[] {
-  const remaining = pool.filter((c) => c.rewardWeight > 0);
-  const result: CardTemplate[] = [];
+// ============================================================
+// 奖励生成（稀有度分级 → 类内均匀）
+// ============================================================
 
-  for (let i = 0; i < count && remaining.length > 0; i++) {
-    const totalWeight = remaining.reduce((sum, c) => sum + c.rewardWeight, 0);
-    let roll = Math.random() * totalWeight;
+function rollRarity(rareOdds: number): Rarity {
+  const roll = Math.random();
+  if (roll < rareOdds) return Rarity.RARE;
+  if (roll < rareOdds + REWARD.RARITY_ODDS.UNCOMMON) return Rarity.UNCOMMON;
+  return Rarity.COMMON;
+}
 
-    for (let j = 0; j < remaining.length; j++) {
-      roll -= remaining[j].rewardWeight;
-      if (roll <= 0) {
-        result.push({ ...remaining[j] });
-        remaining.splice(j, 1);
-        break;
-      }
+function sampleFrom<T>(arr: T[], count: number): T[] {
+  const pool = [...arr];
+  const out: T[] = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
+/** 统计卡组的主导流派（奖励定向用） */
+export function dominantArchetype(deck: CardTemplate[]): import('../types').Archetype | null {
+  const counts = new Map<string, number>();
+  for (const c of deck) {
+    if (c.archetype && c.archetype !== 'GENERIC') {
+      counts.set(c.archetype, (counts.get(c.archetype) ?? 0) + 1);
     }
   }
-
-  return result;
+  let best: string | null = null;
+  let bestN = 2; // 至少 3 张同流派卡才认定为"构筑方向"
+  for (const [k, n] of counts) {
+    if (n > bestN) {
+      best = k;
+      bestN = n;
+    }
+  }
+  return best as import('../types').Archetype | null;
 }
 
-// 生成奖励候选卡牌（加权随机）
-export function generateRewardCards(count: number = 3): RewardCard[] {
-  const picked = weightedSample(ALL_CARD_POOL, count);
-  return picked.map((card) => ({
-    card,
-    isRare: card.rewardWeight <= 5,
-  }));
+/** 生成一轮三选一奖励。guaranteeRare: 至少 1 张稀有；前 2 位可按主流派定向 */
+export function generateRewardCards(count = 3, opts?: { guaranteeRare?: boolean; rareOdds?: number; deckBias?: CardTemplate[] }): RewardCard[] {
+  const rareOdds = opts?.rareOdds ?? REWARD.RARITY_ODDS.RARE;
+  const picks: CardTemplate[] = [];
+  const biasArchetype = opts?.deckBias ? dominantArchetype(opts.deckBias) : null;
+  for (let i = 0; i < count; i++) {
+    const forceRare = opts?.guaranteeRare && i === 0;
+    const rarity = forceRare ? Rarity.RARE : rollRarity(rareOdds);
+    // 前 2 个奖励位 50% 概率从主流派池抽取（供给定向）
+    if (biasArchetype && i < 2 && Math.random() < 0.5) {
+      const archPool = ALL_CARD_POOL.filter((c) => c.archetype === biasArchetype && c.rarity === rarity);
+      if (archPool.length > 0) {
+        picks.push(...sampleFrom(archPool, 1));
+        continue;
+      }
+    }
+    const tierPool = ALL_CARD_POOL.filter((c) => c.rarity === rarity);
+    if (tierPool.length > 0) picks.push(...sampleFrom(tierPool, 1));
+  }
+  return picks.map((c) => ({ card: { ...c }, isRare: c.rarity === Rarity.RARE }));
 }
 
-// 生成商店商品
+// ============================================================
+// 商店
+// ============================================================
+
+function priceFor(c: CardTemplate): number {
+  let price = SHOP.PRICE_MIN + Math.floor(Math.random() * SHOP.PRICE_VARIANCE);
+  if (c.rarity === Rarity.UNCOMMON) price += SHOP.UNCOMMON_PRICE_EXTRA;
+  if (c.rarity === Rarity.RARE) price += SHOP.RARE_PRICE_EXTRA;
+  return price;
+}
+
 export function generateShopItems(): ShopItem[] {
   const pool = [...ALL_CARD_POOL];
   const items: ShopItem[] = [];
 
-  const cardCount = 4 + Math.floor(Math.random() * 2);
+  const cardCount = SHOP.CARD_COUNT_MIN + Math.floor(Math.random() * SHOP.CARD_COUNT_VARIANCE);
   for (let i = 0; i < cardCount && pool.length > 0; i++) {
     const idx = Math.floor(Math.random() * pool.length);
-    const [card] = pool.splice(idx, 1);
-    const cost = 30 + Math.floor(Math.random() * 50);
+    const [c] = pool.splice(idx, 1);
     items.push({
       id: uuidv4(),
       type: ShopItemType.BUY_CARD,
-      card: { ...card },
-      cost,
+      card: { ...c },
+      cost: priceFor(c),
     });
   }
-
-  items.push({
-    id: uuidv4(),
-    type: ShopItemType.REMOVE_CARD,
-    cost: REMOVE_CARD_COST,
-  });
 
   return items;
 }

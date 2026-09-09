@@ -29,12 +29,12 @@ export function CardListModal({ isOpen, onClose, title, cards }: CardListModalPr
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.85, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="relative bg-slate-900/95 border border-white/10 rounded-2xl p-6 max-w-xl w-[90%] max-h-[70vh] overflow-hidden flex flex-col"
+            className="relative panel p-6 max-w-xl w-[90%] max-h-[70vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 标题 */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">{title} ({cards.length})</h3>
+              <h3 className="text-base font-bold text-[var(--text-primary)] tracking-[0.2em]">{title} <span className="num text-[var(--text-muted)]">({cards.length})</span></h3>
               <button
                 onClick={onClose}
                 className="text-white/40 hover:text-white text-xl cursor-pointer"
@@ -46,9 +46,9 @@ export function CardListModal({ isOpen, onClose, title, cards }: CardListModalPr
             {/* 卡牌网格 */}
             <div className="overflow-y-auto flex-1 pr-1">
               {cards.length === 0 ? (
-                <div className="text-white/30 text-center py-8">空</div>
+                <div className="text-white/30 text-center py-8">暂无卡牌</div>
               ) : (
-                <div className="grid grid-cols-4 gap-3 justify-items-center">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 justify-items-center">
                   {cards.map((card) => (
                     <Card key={card.uuid} card={card} size="sm" />
                   ))}

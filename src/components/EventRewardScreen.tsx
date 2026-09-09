@@ -3,13 +3,11 @@ import { useRunStore } from '../store/runStore';
 import type { EventReward } from '../types';
 
 export function EventRewardScreen() {
-  const {
-    pendingEventRewards,
-    eventRewardCollected,
-    collectEventReward,
-    skipEventReward,
-    proceedToMap,
-  } = useRunStore();
+  const pendingEventRewards = useRunStore((s) => s.pendingEventRewards);
+  const eventRewardCollected = useRunStore((s) => s.eventRewardCollected);
+  const collectEventReward = useRunStore((s) => s.collectEventReward);
+  const skipEventReward = useRunStore((s) => s.skipEventReward);
+  const proceedToMap = useRunStore((s) => s.proceedToMap);
 
   const handleSelectReward = (rewardType: EventReward['type']) => {
     collectEventReward(rewardType);
@@ -32,12 +30,12 @@ export function EventRewardScreen() {
         animate={{ opacity: 1, scale: 1 }}
         className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-8 max-w-4xl w-full mx-4 border border-white/10"
       >
-        <h2 className="text-3xl font-bold text-white text-center mb-2">神秘奖励</h2>
-        <p className="text-white/60 text-center mb-8">选择一份奖励继续前进</p>
+        <h2 className="display-title text-3xl text-center mb-2">神秘奖励</h2>
+        <p className="text-xs text-[var(--text-muted)] text-center mb-8 tracking-[0.25em]">选择一份奖励继续前进</p>
 
         {!eventRewardCollected ? (
           <>
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {pendingEventRewards.map((reward, index) => (
                 <motion.button
                   key={reward.type}

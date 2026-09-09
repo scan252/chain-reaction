@@ -23,7 +23,7 @@ export function RewardScreen() {
     <div
       className="flex flex-col items-center justify-center h-screen px-4"
       style={{
-        backgroundImage: 'url(/pic/P2.jpg)',
+        backgroundImage: 'url(/pic/P2.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -35,11 +35,11 @@ export function RewardScreen() {
         animate={{ y: 0, opacity: 1 }}
         className="text-center mb-8"
       >
-        <h1 className="text-3xl font-bold text-yellow-400 mb-2">战斗胜利！</h1>
-        <p className="text-lg text-yellow-300/70">
+        <h1 className="display-title text-4xl mb-3">战斗胜利</h1>
+        <p className="text-[15px] text-[var(--gold-300)] tracking-wider">
           获得 <span className="text-yellow-400 font-bold">{pendingReward.gold}</span> 💰 金币
         </p>
-        <p className="text-sm text-white/50 mt-2">
+        <p className="text-xs text-[var(--text-muted)] mt-2 tracking-[0.2em]">
           卡牌奖励 {pendingReward.currentRound} / {pendingReward.totalRounds}
         </p>
       </motion.div>
@@ -47,27 +47,35 @@ export function RewardScreen() {
       {/* 卡牌奖励 */}
       {!rewardCardCollected ? (
         <>
-          <p className="text-white/60 text-sm mb-4">
+          <p className="section-label mb-4">
             第 {pendingReward.currentRound} 轮 - 选择一张卡牌加入牌组：
           </p>
-          <div className="flex gap-6 mb-6">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 px-2">
             {pendingReward.cards.map((rc, i) => (
               <motion.div
-                key={rc.card.templateId}
+                key={rc.card.templateId + i}
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: i * 0.15 }}
                 whileHover={{ y: -10, scale: 1.05 }}
                 onClick={() => collectRewardCard(rc.card.templateId)}
-                className={`cursor-pointer relative ${rc.isRare ? 'drop-shadow-[0_0_12px_rgba(255,215,0,0.5)]' : ''}`}
+                className="cursor-pointer relative"
               >
-                {rc.isRare && (
-                  <div className="absolute -inset-1 rounded-xl border-2 border-yellow-400/60 animate-pulse pointer-events-none z-10" />
+                {rc.card.rarity !== 'COMMON' && (
+                  <div
+                    className="absolute -inset-1 rounded-xl border-2 animate-pulse pointer-events-none z-10"
+                    style={{ borderColor: rc.card.rarity === 'RARE' ? '#c084fc' : '#38bdf8' }}
+                  />
                 )}
                 <Card card={toDisplayInstance(rc.card)} size="md" />
-                {rc.isRare && (
-                  <span className="absolute -top-2 -right-2 text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded-full font-bold z-20">
+                {rc.card.rarity === 'RARE' && (
+                  <span className="absolute -top-2 -right-2 text-[10px] bg-purple-500 text-white px-1.5 py-0.5 rounded-full font-bold z-20">
                     稀有
+                  </span>
+                )}
+                {rc.card.rarity === 'UNCOMMON' && (
+                  <span className="absolute -top-2 -right-2 text-[10px] bg-sky-500 text-white px-1.5 py-0.5 rounded-full font-bold z-20">
+                    罕见
                   </span>
                 )}
               </motion.div>
@@ -79,7 +87,7 @@ export function RewardScreen() {
             onClick={skipReward}
             className="text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer"
           >
-            跳过卡牌奖励
+            跳过卡牌奖励（+8 💰）
           </motion.button>
         </>
       ) : (

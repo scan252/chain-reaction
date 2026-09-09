@@ -21,7 +21,6 @@ import { Card } from './Card';
 import { RelicDisplay } from './RelicDisplay';
 import { BuffDisplay } from './BuffDisplay';
 import type { CardInstance, PlayerClass } from '../types';
-// import { CLASS_MAX_MP } from '../types';
 
 const CLASS_NAMES: Record<PlayerClass, string> = {
   WARRIOR: '勇士',
@@ -34,22 +33,23 @@ const CLASS_ICONS: Record<PlayerClass, string> = {
 };
 
 const CLASS_IMAGES: Record<PlayerClass, string | undefined> = {
-  WARRIOR: '/pic/pro/pro1.jpg',
-  PRIEST: '/pic/pro/pro2.jpg',
+  WARRIOR: '/pic/pro/pro1.webp',
+  PRIEST: '/pic/pro/pro2.webp',
 };
 
 export function GameArena() {
   const initBattle = useGameStore((s) => s.initBattle);
   const addToPipeline = useGameStore((s) => s.addToPipeline);
   const reorderPipeline = useGameStore((s) => s.reorderPipeline);
-  const useClassSkill = useGameStore((s) => s.useClassSkill);
+  const activateClassSkill = useGameStore((s) => s.activateClassSkill);
   const executePipelineAction = useGameStore((s) => s.executePipelineAction);
   const nextTurn = useGameStore((s) => s.nextTurn);
   const dismissExecutionSummary = useGameStore((s) => s.dismissExecutionSummary);
+  const requestSkip = useGameStore((s) => s.requestSkip);
   const drawPile = useGameStore((s) => s.drawPile);
   const discardPile = useGameStore((s) => s.discardPile);
   const exhaustPile = useGameStore((s) => s.exhaustPile);
-  const pipeline = useGameStore((s) => s.pipeline);
+  const skillUsedThisBattle = useGameStore((s) => s.skillUsedThisBattle);
   const pipelineSlots = useRunStore((s) => s.pipelineSlots);
   const playerProfile = useRunStore((s) => s.playerProfile);
   const playerMp = useRunStore((s) => s.playerMp);
@@ -61,7 +61,6 @@ export function GameArena() {
   const playerMaxHp = useGameStore((s) => s.playerMaxHp);
   const phase = useGameStore((s) => s.phase);
   const turnNumber = useGameStore((s) => s.turnNumber);
-  const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
   const enemy = useGameStore((s) => s.enemy);
   const battleStats = useGameStore((s) => s.battleStats);
 
@@ -70,20 +69,52 @@ export function GameArena() {
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [showExhaustModal, setShowExhaustModal] = useState(false);
   const [skillMessage, setSkillMessage] = useState<string | null>(null);
+  const [skillMessageKind, setSkillMessageKind] = useState<'success' | 'error'>('success');
   const [showSkillButton, setShowSkillButton] = useState(false);
+  const [selectedCardUuid, setSelectedCardUuid] = useState<string | null>(null);
   const characterRef = useRef<HTMLDivElement>(null);
+  const skillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const canUseSkill = phase === 'PLAY' && playerMp > 0;
+  const difficulty = useRunStore((s) => s.difficulty);
+  const comboCount = useGameStore((s) => s.comboCount);
+  const turnSummary = useGameStore((s) => s.turnSummary);
+  const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
+  const overdriveFlash = useGameStore((s) => s.overdriveFlash);
+
+  // gameStore.pipeline 在 initBattle 后才有长度，用它作为战斗就绪的派生信号（避免 effect 内 setState）
+  const battleReady = useGameStore((s) => s.pipeline.length > 0);
+
+  const canUseSkill = phase === 'PLAY' && playerMp > 0 && !skillUsedThisBattle;
   const mpPercent = Math.max(0, (playerMp / playerMaxMp) * 100);
   const hpPercent = Math.max(0, (playerHp / playerMaxHp) * 100);
+  const isExecuting = phase === 'EXECUTE_PHASE1' || phase === 'EXECUTE_PHASE2' || phase === 'EXECUTE_PHASE3';
 
   useEffect(() => {
     const node = getCurrentMapNode();
     if (node) {
-      const enemy = getEnemyForNode(node, pipelineSlots);
-      initBattle(enemy);
+      const battleEnemy = getEnemyForNode(node, pipelineSlots, difficulty);
+      initBattle(battleEnemy);
     }
-  }, [initBattle, pipelineSlots]);
+  }, [initBattle, pipelineSlots, difficulty]);
+
+  // 点击角色区域以外时收起技能浮层（不阻挡战场其他操作）
+  useEffect(() => {
+    if (!showSkillButton) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (characterRef.current && !characterRef.current.contains(e.target as Node)) {
+        setShowSkillButton(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [showSkillButton]);
+
+  // 卸载时清理技能提示计时器
+  useEffect(() => {
+    return () => {
+      if (skillTimerRef.current) clearTimeout(skillTimerRef.current);
+    };
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -108,25 +139,30 @@ export function GameArena() {
     if (activeData.type === 'hand-card' && overData.type === 'pipeline-slot') {
       const card = activeData.card as CardInstance;
       addToPipeline(card.uuid, overData.index as number);
+      setSelectedCardUuid(null);
     }
 
     if (activeData.type === 'pipeline-card' && overData.type === 'pipeline-slot') {
-      reorderPipeline(activeData.index as number, overData.index as number);
+      const from = activeData.index as number;
+      const to = overData.index as number;
+      if (from !== to) {
+        reorderPipeline(from, to);
+      }
     }
   };
-
-  const hasCards = pipeline.some((c) => c !== null);
 
   const handleExecute = async () => {
     await executePipelineAction();
   };
 
   const handleVictory = () => {
+    if (phase !== 'VICTORY') return;
     onBattleVictory(playerHp, {
       totalDamage: battleStats.totalDamage,
       totalArmor: battleStats.totalArmor,
       effectiveArmor: battleStats.effectiveArmor,
       enemyName: enemy.name,
+      isElite: enemy.isElite ?? false,
     });
   };
 
@@ -137,6 +173,38 @@ export function GameArena() {
     dismissExecutionSummary();
   };
 
+  const showSkillFeedback = (msg: string, kind: 'success' | 'error' = 'success') => {
+    setSkillMessage(msg);
+    setSkillMessageKind(kind);
+    if (skillTimerRef.current) clearTimeout(skillTimerRef.current);
+    skillTimerRef.current = setTimeout(() => setSkillMessage(null), 1500);
+  };
+
+  const handleUseSkill = () => {
+    const ok = activateClassSkill();
+    if (ok) {
+      showSkillFeedback('技能使用成功！');
+    } else {
+      const reason = skillUsedThisBattle
+        ? '本场战斗技能已用过'
+        : playerProfile?.class === 'PRIEST' && playerHp >= playerMaxHp
+          ? '生命值已满'
+          : playerMp <= 0
+            ? 'MP不足'
+            : '技能不可用';
+      showSkillFeedback(reason, 'error');
+    }
+    setShowSkillButton(false);
+  };
+
+  if (!battleReady) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-950 text-white/60">
+        正在进入战斗…
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -146,7 +214,7 @@ export function GameArena() {
       <div
         className="flex flex-col h-screen overflow-hidden relative"
         style={{
-          backgroundImage: 'url(/pic/P4_opacity_65.png)',
+          backgroundImage: 'url(/pic/P4_opacity_65.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -158,10 +226,110 @@ export function GameArena() {
         {/* 进度信息条 */}
         <RunHUD />
 
+        {/* 战斗飘字：锚定敌我位置 */}
+        <AnimatePresence>
+          {turnSummary && showExecutionSummary && turnSummary.totalDamage > 0 && (
+            <motion.div
+              key={"dmg-" + turnSummary.totalDamage}
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1.05, y: -6 }}
+              exit={{ opacity: 0, y: -18 }}
+              transition={{ duration: 0.45, type: 'spring' }}
+              className="absolute right-[16%] top-[24%] z-20 pointer-events-none"
+            >
+              <span
+                className="num font-black"
+                style={{
+                  fontSize: turnSummary.totalDamage >= 60 ? 44 : 34,
+                  color: turnSummary.totalDamage >= 60 ? '#f0b46a' : '#ece7da',
+                  textShadow: '0 2px 10px rgba(5,7,12,0.9)',
+                }}
+              >
+                -{turnSummary.totalDamage}
+              </span>
+              {turnSummary.overdrive && (
+                <div className="text-[13px] font-black text-[var(--gold-300)] tracking-[0.25em] animate-pulse">⚡ 过载</div>
+              )}
+            </motion.div>
+          )}
+          {turnSummary && showExecutionSummary && turnSummary.hpLoss > 0 && (
+            <motion.div
+              key={"hp-" + turnSummary.hpLoss}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1.05 }}
+              exit={{ opacity: 0, y: 14 }}
+              transition={{ duration: 0.45, type: 'spring' }}
+              className="absolute left-[16%] top-[46%] z-20 pointer-events-none"
+            >
+              <span className="num font-black text-3xl text-[#e88a84]" style={{ textShadow: '0 2px 10px rgba(5,7,12,0.9)' }}>
+                -{turnSummary.hpLoss}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 跳过动画按钮（结算动画期间显示） */}
+        <AnimatePresence>
+          {(phase === 'EXECUTE_PHASE1' || phase === 'EXECUTE_PHASE2') && (
+            <motion.button
+              key="skip-button"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              onClick={requestSkip}
+              className="absolute top-12 right-3 z-30 btn btn-secondary" style={{ height: 28, fontSize: 12, padding: '0 14px' }}
+            >
+              跳过 ⏭
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* 连击计数器（执行阶段显示） */}
+        <AnimatePresence>
+          {isExecuting && comboCount >= 2 && (
+            <motion.div
+              key={'combo-' + comboCount}
+              initial={{ scale: 1.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className='absolute left-[20%] top-[18%] z-20 pointer-events-none bg-black/55 rounded-xl px-4 py-1.5 border border-[rgba(249,115,22,0.4)]'
+            >
+              <span
+                className='font-black text-4xl'
+                style={{
+                  color: comboCount >= 5 ? '#fcd34d' : '#f97316',
+                  textShadow: '0 0 20px currentColor, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+                }}
+              >
+                {comboCount} 连击!
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 过载特效 */}
+        <AnimatePresence>
+          {overdriveFlash && (
+            <motion.div
+              key='overdrive'
+              initial={{ opacity: 0.9, scale: 0.6 }}
+              animate={{ opacity: 0, scale: 1.6 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9 }}
+              className='absolute inset-0 z-40 pointer-events-none'
+              style={{
+                background: 'radial-gradient(circle at 50% 40%, rgba(250,204,21,0.55), transparent 55%)',
+                border: '4px solid rgba(250,204,21,0.7)',
+                borderRadius: '24px',
+              }}
+            />
+          )}
+        </AnimatePresence>
+
         {/* 敌方区域（占据剩余空间） */}
         <div className="flex-1 flex items-center justify-center min-h-0 relative">
           <EnemyArea />
-          
+
           {/* 胜利/失败按钮 - 浮动在敌人区域下方 */}
           <AnimatePresence>
             {(phase === 'VICTORY' || phase === 'DEFEAT') && (
@@ -176,7 +344,7 @@ export function GameArena() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleVictory}
-                    className="px-12 py-4 rounded-xl font-bold text-xl tracking-wider bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 cursor-pointer"
+                    className="btn btn-primary btn-xl"
                   >
                     领取奖励
                   </motion.button>
@@ -187,9 +355,9 @@ export function GameArena() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onBattleDefeat}
-                    className="px-12 py-4 rounded-xl font-bold text-xl tracking-wider bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg shadow-gray-500/30 cursor-pointer"
+                    className="btn btn-secondary btn-xl"
                   >
-                    战败 - 重新开始
+                    战败 - 查看结算
                   </motion.button>
                 )}
               </motion.div>
@@ -201,209 +369,177 @@ export function GameArena() {
 
         {/* 执行序列区 */}
         <div className="shrink-0">
-          <PipelineBoard />
+          <PipelineBoard
+            selectedUuid={selectedCardUuid}
+            onSlotClick={(slot) => {
+              if (selectedCardUuid) {
+                addToPipeline(selectedCardUuid, slot);
+                setSelectedCardUuid(null);
+              }
+            }}
+            onExecute={handleExecute}
+            onNextTurn={handleNextTurn}
+          />
         </div>
 
         <div className="border-t border-white/5" />
 
-        {/* 底部区域：上横条 - 执行结算按钮 | 中横条 - 角色占位+HP/MP | 下横条 - 手牌区+牌堆 | 底横条 - 提示文字 */}
+        {/* 底部区域：行动按钮 | 角色面板 | 手牌区 | 提示 */}
         <div className="shrink-0 flex flex-col relative z-20">
-          {/* 上横条：执行结算 / 下一回合 按钮 */}
-          <div className="flex justify-center pt-8 pb-2">
-            {phase === 'PLAY' && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleExecute}
-                disabled={!hasCards}
-                className={`px-12 py-4 rounded-xl font-bold text-xl tracking-wider transition-all ${
-                  hasCards
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                执行结算
-              </motion.button>
-            )}
 
-            {showExecutionSummary && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleNextTurn}
-                className="px-12 py-4 rounded-xl font-bold text-xl tracking-wider bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 cursor-pointer"
-              >
-                下一回合
-              </motion.button>
-            )}
-          </div>
-
-          {/* 中横条：角色占位 + HP/MP（紧贴角色右侧） */}
-          <div className="flex items-center px-4 py-2 gap-4">
-            {/* 左侧：角色占位区 */}
-            <div 
+          {/* 角色面板 + 手牌 + 牌堆 */}
+          <div className="flex items-end px-4 pt-1 gap-4">
+            {/* 角色面板 */}
+            <div
               ref={characterRef}
-              className="flex flex-col items-center justify-center shrink-0 w-[160px] relative"
-              onClick={() => setShowSkillButton(true)}
+              className="shrink-0 relative panel p-2 flex items-center gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors"
+              onClick={() => setShowSkillButton((v) => !v)}
+              title={skillUsedThisBattle ? '职业技能已使用' : '点击使用职业技能'}
             >
-              {/* 角色大占位区 */}
-              <div className="w-36 h-44 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-purple-800/20 border-2 border-dashed border-white/20 flex flex-col items-center justify-center relative cursor-pointer hover:border-white/40 transition-colors overflow-hidden">
+              {/* 头像 */}
+              <div className="w-16 h-20 rounded-md overflow-hidden border border-[var(--line-strong)] relative shrink-0">
                 {playerProfile && CLASS_IMAGES[playerProfile.class] ? (
-                  <img 
-                    src={CLASS_IMAGES[playerProfile.class]} 
+                  <img
+                    src={CLASS_IMAGES[playerProfile.class]}
                     alt={playerProfile.class === 'WARRIOR' ? '勇士' : '牧师'}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-5xl">{playerProfile ? CLASS_ICONS[playerProfile.class] : '⚔️'}</span>
+                  <div className="w-full h-full flex items-center justify-center text-3xl bg-[var(--ink-700)]">
+                    {playerProfile ? CLASS_ICONS[playerProfile.class] : '⚔'}
+                  </div>
                 )}
               </div>
-              {/* 提示文字 - 放在头像下方 */}
-              <span className="mt-2 text-xs text-white/50 text-shadow-sm whitespace-nowrap">点击上方头像使用技能</span>
-              
-              {/* 职业技能按钮 - 点击角色后浮现 */}
+
+              {/* 名字 + 条 */}
+              <div className="flex flex-col gap-1.5 w-[168px]">
+                {playerProfile && (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[15px] font-bold text-[var(--text-primary)] leading-none">{playerProfile.name}</span>
+                    <span className="text-[11px] text-[var(--text-muted)] tracking-[0.25em]">{CLASS_NAMES[playerProfile.class]}</span>
+                  </div>
+                )}
+                {/* 生命 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] w-6">生命</span>
+                  <div className="flex-1 h-[7px] rounded-sm bg-[var(--ink-900)] overflow-hidden border border-[var(--line)]">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#a83a34] to-[#d9564f]"
+                      animate={{ width: `${hpPercent}%` }}
+                    />
+                  </div>
+                  <span className="num text-[11px] font-bold text-[#e88a84] w-14 text-right">{playerHp}<span className="text-[var(--text-muted)]">/{playerMaxHp}</span></span>
+                </div>
+                {/* 灵力 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] w-6">灵力</span>
+                  <div className="flex-1 h-[7px] rounded-sm bg-[var(--ink-900)] overflow-hidden border border-[var(--line)]">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#6f4fc0] to-[#9d7be0]"
+                      animate={{ width: `${mpPercent}%` }}
+                    />
+                  </div>
+                  <span className="num text-[11px] font-bold text-[#b79ae8] w-14 text-right">{playerMp}<span className="text-[var(--text-muted)]">/{playerMaxMp}</span></span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.2em] num">回合 {turnNumber}</span>
+                  {/* 职业技能按钮 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (showSkillButton) { handleUseSkill(); } else { setShowSkillButton(true); }
+                    }}
+                    disabled={!canUseSkill}
+                    className={`text-[10px] px-2 py-0.5 rounded border tracking-[0.15em] transition-colors ${
+                      canUseSkill
+                        ? 'text-[var(--gold-300)] border-[var(--line-strong)] hover:bg-[rgba(212,169,92,0.12)] cursor-pointer'
+                        : 'text-[var(--text-muted)] border-[var(--line)] cursor-not-allowed'
+                    }`}
+                  >
+                    {playerProfile?.class === 'WARRIOR' ? '强化' : playerProfile?.class === 'PRIEST' ? '治疗' : '技能'}
+                    <span className="ml-1 opacity-70">-1灵力</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 职业技能确认浮层 */}
               <AnimatePresence>
                 {showSkillButton && playerProfile && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                    animate={{ opacity: 1, y: -50, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-30 panel p-3 w-52"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <motion.button
-                      whileHover={canUseSkill ? { scale: 1.05 } : {}}
-                      whileTap={canUseSkill ? { scale: 0.95 } : {}}
-                      onClick={() => {
-                        if (useClassSkill()) {
-                          setSkillMessage('技能使用成功！');
-                          setTimeout(() => setSkillMessage(null), 1500);
-                        }
-                        setShowSkillButton(false);
-                      }}
+                    <div className="text-xs font-bold text-[var(--gold-300)] tracking-wider mb-1">
+                      {playerProfile.class === 'WARRIOR' ? '职业技能 · 强化' : '职业技能 · 治疗'}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
+                      {playerProfile.class === 'WARRIOR'
+                        ? '将一张「强化」卡置入手牌：下一张牌效果 ×4（消耗）。'
+                        : '回复 20 点生命值（消耗）。'}
+                    </div>
+                    <button
+                      onClick={handleUseSkill}
                       disabled={!canUseSkill}
-                      className={`py-2 px-3 rounded-lg font-bold text-xs transition-all whitespace-nowrap ${
-                        canUseSkill
-                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                          : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`btn w-full ${canUseSkill ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ height: 30, fontSize: 12 }}
                     >
-                      <span>
-                        {playerProfile.class === 'WARRIOR'
-                          ? '强化 (-1MP)'
-                          : playerProfile.class === 'PRIEST'
-                          ? '治疗 (-1MP)'
-                          : '技能'}
-                      </span>
-                    </motion.button>
+                      确 认 使 用
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* 角色右侧：HP/MP条（放大，紧贴） */}
-            <div className="flex flex-col justify-center gap-3 w-48">
-              {/* 玩家名称 */}
-              {playerProfile && (
-                <div className="text-center mb-1">
-                  <div className="text-white font-bold text-lg text-shadow">{playerProfile.name}</div>
-                  <div className="text-white/50 text-sm text-shadow-sm">{CLASS_NAMES[playerProfile.class]}</div>
-                </div>
-              )}
-              {/* HP - 放大 */}
-              <div className="flex items-center gap-2">
-                <span className="text-red-400 text-lg text-shadow">❤️</span>
-                <div className="flex-1 h-4 rounded-full bg-gray-800 overflow-hidden border border-white/10">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-red-600 to-red-400"
-                    animate={{ width: `${hpPercent}%` }}
-                  />
-                </div>
-                <span className="text-sm text-red-400 font-bold w-16 text-right text-shadow">{playerHp}/{playerMaxHp}</span>
-              </div>
-              {/* MP - 放大，在HP下方 */}
-              <div className="flex items-center gap-2">
-                <span className="text-purple-400 text-lg text-shadow">🔮</span>
-                <div className="flex-1 h-4 rounded-full bg-gray-800 overflow-hidden border border-white/10">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-purple-600 to-pink-400"
-                    animate={{ width: `${mpPercent}%` }}
-                  />
-                </div>
-                <span className="text-sm text-purple-400 font-bold w-16 text-right text-shadow">{playerMp}/{playerMaxMp}</span>
-              </div>
-              {/* 回合 */}
-              <div className="text-center text-xs text-white/40 mt-1 text-shadow-sm">回合 {turnNumber}</div>
-              
-              {/* Buff 显示 */}
+            {/* Buff 显示（角色面板右侧） */}
+            <div className="pb-3">
               <BuffDisplay />
             </div>
-          </div>
 
-          {/* 中横条：牌库(左) + 手牌区(中) + 弃牌堆(右) + 消耗堆(最右，可选) */}
-          <div className="flex items-center px-4 py-2">
-            <div className="flex items-center w-full">
-              {/* 左侧：牌库 */}
-              <div className="shrink-0 w-[100px] flex justify-center">
-                <DeckPile onClick={() => setShowDeckModal(true)} />
-              </div>
-              
-              {/* 中间：手牌区 */}
-              <div className="flex-1 min-w-0 px-4">
-                <HandArea />
-              </div>
-              
-              {/* 右侧：弃牌堆 + 消耗堆 */}
-              <div className="shrink-0 flex items-center gap-4">
-                <DiscardPile onClick={() => setShowDiscardModal(true)} />
-                {exhaustPile.length > 0 && (
-                  <ExhaustPile onClick={() => setShowExhaustModal(true)} />
-                )}
-              </div>
+            {/* 中间：手牌区 */}
+            <div className="flex-1 min-w-0 px-2">
+              <HandArea
+                selectedUuid={selectedCardUuid}
+                onSelectCard={(uuid) => setSelectedCardUuid((cur) => (cur === uuid ? null : uuid))}
+              />
+            </div>
+
+            {/* 右侧：牌堆 */}
+            <div className="shrink-0 flex items-center gap-3 pb-2">
+              <DeckPile onClick={() => setShowDeckModal(true)} />
+              <DiscardPile onClick={() => setShowDiscardModal(true)} />
+              {exhaustPile.length > 0 && (
+                <ExhaustPile onClick={() => setShowExhaustModal(true)} />
+              )}
             </div>
           </div>
 
-          {/* 下横条：操作按钮 + 提示文字 */}
-          <div className="flex flex-col items-center justify-center py-2 gap-3">
-            {/* 操作按钮 - 胜利/失败按钮已移至敌人区域 */}
 
-            {/* 提示文字 - 只在非胜利/失败状态显示 */}
-            {phase !== 'VICTORY' && phase !== 'DEFEAT' && (
-              <div className="flex items-center gap-2 text-sm text-white/50">
-                <span className="text-cyan-400/60 text-shadow">⚡</span>
-                <span className="text-shadow-sm">执行序列 - 从左到右触发连锁反应</span>
-                <span className="text-cyan-400/60 text-shadow">⚡</span>
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* 点击其他区域隐藏技能按钮 */}
-        {showSkillButton && (
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setShowSkillButton(false)}
-          />
-        )}
-
         {/* 技能使用提示 */}
-        {skillMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-32 left-1/2 -translate-x-1/2 px-4 py-2 bg-green-500/80 rounded-lg text-white text-sm font-bold z-30"
-          >
-            {skillMessage}
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {skillMessage && (
+            <motion.div
+              key={skillMessage}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`absolute bottom-32 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-white text-sm font-bold z-30 ${
+                skillMessageKind === 'success' ? 'bg-green-500/80' : 'bg-red-500/80'
+              }`}
+            >
+              {skillMessage}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* 拖拽覆盖层 */}
       <DragOverlay>
-        {activeCard ? <Card card={activeCard} isDragging /> : null}
+        {activeCard ? <div style={{ transform: 'rotate(4deg)' }}><Card card={activeCard} isDragging /></div> : null}
       </DragOverlay>
 
       {/* 弹窗 */}

@@ -9,6 +9,7 @@ import type {
   RelicId,
 } from '../types';
 import { CardType, AttackPattern, StatusEffectType, INITIAL_CONTEXT, RelicId as RelicIdConst } from '../types';
+import { STATUS, KEYWORD } from '../config/balance';
 
 // --- 效果函数签名 ---
 
@@ -19,170 +20,443 @@ type EffectFunction = (
   pipeline: (CardInstance | null)[],
 ) => ExecutionContext;
 
-// --- 辅助：更新数组中某个索引的值 ---
+// --- 辅助 ---
 
 function updateArr(arr: number[], idx: number, delta: number): number[] {
   return arr.map((v, i) => (i === idx ? v + delta : v));
 }
 
+/** 攻击类效果（受攻击修饰/连锁计数影响） */
+export function isAttackEffect(effectId: string): boolean {
+  return [
+    'DEAL_DAMAGE', 'PHASE_SHIFT', 'CHAIN_STORM', 'GRAND_FINALE', 'PHOENIX_STRIKE', 'SCORCH', 'CHAIN_BLADE', 'BLOOD_PRICE',
+  ].includes(effectId);
+}
+
+/** 护盾类效果 */
+export function isShieldEffect(effectId: string): boolean {
+  return ['GAIN_ARMOR', 'MIRROR_REFLECT', 'MAGNETIC_SHIELD', 'GOLDEN_BELL', 'BURN_WARD', 'REACTOR_SHIELD', 'RIPOSTE_GUARD'].includes(effectId);
+}
+
+/** 卡牌的攻/防类别（共鸣"同类"判定） */
+export function cardKind(card: CardInstance): 'ATTACK' | 'SHIELD' | 'OTHER' {
+  if (isAttackEffect(card.effectId)) return 'ATTACK';
+  if (isShieldEffect(card.effectId)) return 'SHIELD';
+  return 'OTHER';
+}
+
+/** 计算一张卡的总触发次数（连锁机制：1 + 连锁N × 此前攻击牌数） */
+function computeChainRepeats(card: CardInstance, ctx: ExecutionContext): number {
+  const chain = (card.chain ?? 0) + ctx.nextCardChainBonus + (ctx.relicChainBonus ?? 0);
+  if (chain <= 0) return 1;
+  return 1 + chain * ctx.chainAttackCount;
+}
+
+/** 焚身付费：每张卡每场战斗只付一次；重复打出时效果 ×0.6（防止免费白板化）。返回新数组避免修改冻结状态。 */
+function payBurn(ctx: ExecutionContext, card: CardInstance): { cost: number; paidIds: string[] } {
+  if (!card.burnCost) return { cost: 0, paidIds: ctx.paidBurnCardIds };
+  const key = card.templateId + ':' + (card.uuid ?? '');
+  if (ctx.paidBurnCardIds.includes(key)) return { cost: 0, paidIds: ctx.paidBurnCardIds };
+  const cost = Math.max(1, card.burnCost - (ctx.relicBurnDiscount ?? 0));
+  return { cost, paidIds: [...ctx.paidBurnCardIds, key] };
+}
+
+/** 焚身卡重复打出的衰减乘数 */
+function burnRepeatMultiplier(ctx: ExecutionContext, card: CardInstance): number {
+  if (!card.burnCost) return 1;
+  const key = card.templateId + ':' + (card.uuid ?? '');
+  return ctx.paidBurnCardIds.includes(key) ? 0.6 : 1;
+}
+
+/** 单次触发的基础数值（含超导加成） */
+function perTriggerValue(card: CardInstance, ctx: ExecutionContext): number {
+  return card.baseValue + ctx.globalDamageBonus + ctx.chainBonusPerTrigger;
+}
+
 // --- 效果注册表 ---
 
 export const EffectRegistry: Record<string, EffectFunction> = {
-  DEAL_DAMAGE: (ctx, card, slotIndex, pipeline) => {
-    // 基础值 + 全局伤害加成
-    let effectiveValue = card.baseValue + ctx.globalDamageBonus;
-    // 背水一战：如果前一个非空槽位是 DESPERATE_STRIKE
-    for (let i = slotIndex - 1; i >= 0; i--) {
-      const prev = pipeline[i];
-      if (!prev) continue;
-      if (prev.effectId === 'DESPERATE_STRIKE') {
-        effectiveValue += ctx.desperateHpLoss;
-      }
-      break; // 只看紧邻的前一张非空卡
-    }
-    const totalDamage = effectiveValue * ctx.nextCardMultiplier * ctx.nextCardRepeats;
+  // ===== 通用 =====
+  DEAL_DAMAGE: (ctx, card, slotIndex) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier;
+    const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
     return {
       ...ctx,
-      accumulatedDamage: ctx.accumulatedDamage + totalDamage,
-      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, totalDamage),
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
     };
   },
 
   GAIN_ARMOR: (ctx, card, slotIndex) => {
-    const totalArmor = card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats;
+    // 反应堆盾等护盾卡同样吃连锁（护盾连锁计数同样基于此前攻击牌数）
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * repeats);
     return {
       ...ctx,
-      accumulatedArmor: ctx.accumulatedArmor + totalArmor,
-      slotArmors: updateArr(ctx.slotArmors, slotIndex, totalArmor),
+      accumulatedArmor: ctx.accumulatedArmor + total,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
+      nextCardChainBonus: 0,
     };
   },
 
-  MULTIPLY_NEXT: (ctx, card) => {
+  MULTIPLY_NEXT: (ctx, card) => ({
+    ...ctx,
+    nextCardMultiplier: ctx.nextCardMultiplier * (card.baseValue || 2),
+  }),
+
+  REPEAT_NEXT: (ctx, card) => ({
+    ...ctx,
+    nextCardRepeats: ctx.nextCardRepeats * (card.baseValue || 2),
+  }),
+
+  // ===== 连锁流 =====
+  // 链式风暴：6 伤连锁2；连锁计数≥3 时再 ×2（毕业combo）
+  CHAIN_STORM: (ctx, card, slotIndex) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier;
+    let total = Math.floor(per * repeats + ctx.nextCardFlatBonus);
+    if (ctx.chainAttackCount >= 3) total *= 2;
+    total = Math.floor(total * ctx.deadlyMultiplier);
     return {
       ...ctx,
-      nextCardMultiplier: ctx.nextCardMultiplier * (card.baseValue || 2),
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
     };
   },
 
-  REPEAT_NEXT: (ctx, card) => {
+  // 链化：下一张牌获得连锁 N
+  CHAIN_IMBUE: (ctx, card) => ({
+    ...ctx,
+    nextCardChainBonus: ctx.nextCardChainBonus + card.baseValue,
+  }),
+
+  // 超导：连锁触发时每次额外伤害（本场成长，经 battleChainBonus 通道由 gameStore 结算）
+  SUPERCONDUCTOR: (ctx, card) => ({
+    ...ctx,
+    chainBonusPerTrigger: ctx.chainBonusPerTrigger + card.baseValue,
+  }),
+
+  // ===== 共鸣流 =====
+  // 定位仪：本回合共鸣加成提升（在预扫描中按在场检测应用，此处仅占位）
+  RESONANCE_TUNER: (ctx) => ctx,
+
+  // 谐振腔：本回合每有一对共鸣相邻连接，全局伤害本场 +baseValue（无序对去重）
+  RESONANCE_FEED: (ctx, card, _slotIndex, pipeline) => {
+    let pairs = 0;
+    for (let i = 0; i < pipeline.length - 1; i++) {
+      const a = pipeline[i];
+      const b = pipeline[i + 1];
+      if (a && b && cardKind(a) === cardKind(b) && (a.resonance || b.resonance)) pairs++;
+    }
     return {
       ...ctx,
-      nextCardRepeats: ctx.nextCardRepeats * (card.baseValue || 2),
+      globalDamageBonus: ctx.globalDamageBonus + pairs * card.baseValue,
     };
   },
 
-  // --- 新效果：连锁反应（仅对盾牌有效）---
-  REPEAT_NEXT_SHIELD: (ctx, card, slotIndex, pipeline) => {
-    // 检查下一张非空卡牌是否是盾牌
-    for (let i = slotIndex + 1; i < pipeline.length; i++) {
-      const nextCard = pipeline[i];
-      if (!nextCard) continue;
-      // 如果是盾牌效果才生效
-      if (nextCard.effectId === 'GAIN_ARMOR' || nextCard.effectId === 'MIRROR_REFLECT') {
-        return {
-          ...ctx,
-          nextCardRepeats: ctx.nextCardRepeats * (card.baseValue || 4),
-        };
+  // 磁力盾：获得护甲，并把等量护甲复制到相邻的无护甲槽位
+  MAGNETIC_SHIELD: (ctx, card, slotIndex, pipeline) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * repeats);
+    const slotArmors = updateArr(ctx.slotArmors, slotIndex, total);
+    let copied = 0;
+    for (const nb of [slotIndex - 1, slotIndex + 1]) {
+      if (nb < 0 || nb >= pipeline.length) continue;
+      if (pipeline[nb] && (slotArmors[nb] ?? 0) === 0) {
+        slotArmors[nb] += total;
+        copied += total;
       }
-      break;
     }
-    // 下一张不是盾牌，效果不生效
-    return ctx;
+    return {
+      ...ctx,
+      slotArmors,
+      accumulatedArmor: ctx.accumulatedArmor + total + copied,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+    };
   },
 
-  // --- 新效果：多次打击（仅对攻击有效）---
-  REPEAT_NEXT_ATTACK: (ctx, card, slotIndex, pipeline) => {
-    // 检查下一张非空卡牌是否是攻击
-    for (let i = slotIndex + 1; i < pipeline.length; i++) {
-      const nextCard = pipeline[i];
-      if (!nextCard) continue;
-      // 如果是攻击效果才生效
-      if (nextCard.effectId === 'DEAL_DAMAGE' || nextCard.effectId === 'PHASE_SHIFT') {
-        return {
-          ...ctx,
-          nextCardRepeats: ctx.nextCardRepeats * (card.baseValue || 4),
-        };
-      }
-      break;
-    }
-    // 下一张不是攻击，效果不生效
-    return ctx;
+  // 反应堆盾：获得护盾；本回合每有一张已执行的攻击牌额外 +3（线性成长，不与倍率链叠乘）
+  REACTOR_SHIELD: (ctx, card, slotIndex) => {
+    const base = Math.floor(card.baseValue * ctx.nextCardMultiplier);
+    const bonus = ctx.chainAttackCount * 3;
+    const total = base + bonus;
+    return {
+      ...ctx,
+      accumulatedArmor: ctx.accumulatedArmor + total,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+    };
   },
 
-  // --- 新效果：移形换影 ---
-  PHASE_SHIFT: (ctx, card, slotIndex, _pipeline) => {
-    const totalDamage = card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats;
-    // 注册伤害转移：传递给前一格（左侧槽位）
+  // 受身：获得护盾；本槽每被攻击一次（结算后），本场全局伤害 +2
+  RIPOSTE_GUARD: (ctx, card, slotIndex) => {
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats);
+    return {
+      ...ctx,
+      accumulatedArmor: ctx.accumulatedArmor + total,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+    };
+  },
+
+  // 链刃：伤害；每次连锁触发额外获得 1 护盾
+  CHAIN_BLADE: (ctx, card, slotIndex) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier * burnRepeatMultiplier(ctx, card);
+    const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
+    const chainTriggers = repeats - 1;
+    const shieldGain = chainTriggers > 0 ? chainTriggers : 0;
+    return {
+      ...ctx,
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      accumulatedArmor: ctx.accumulatedArmor + shieldGain,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, shieldGain),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
+    };
+  },
+
+  // 大合奏：10 伤共鸣；左右均为攻击卡时再 +10
+  GRAND_FINALE: (ctx, card, slotIndex, pipeline) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier;
+    let total = Math.floor(per * repeats + ctx.nextCardFlatBonus);
+    const left = pipeline[slotIndex - 1];
+    const right = pipeline[slotIndex + 1];
+    if (left && right && cardKind(left) === 'ATTACK' && cardKind(right) === 'ATTACK') {
+      total += 10;
+    }
+    total = Math.floor(total * ctx.deadlyMultiplier);
+    return {
+      ...ctx,
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
+    };
+  },
+
+  // ===== 反击流 =====
+  PHASE_SHIFT: (ctx, card, slotIndex) => {
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats * ctx.deadlyMultiplier);
     const newRedirect = { ...ctx.damageRedirectMap };
     if (slotIndex > 0) {
       newRedirect[slotIndex] = slotIndex - 1;
     }
     return {
       ...ctx,
-      accumulatedDamage: ctx.accumulatedDamage + totalDamage,
-      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, totalDamage),
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
       damageRedirectMap: newRedirect,
+      chainAttackCount: ctx.chainAttackCount + 1,
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
     };
   },
 
-  // --- 新效果：镜面反射 ---
+  // 镜面反射：获得护甲，完全格挡时反弹等盾值伤害（反击=盾值）
   MIRROR_REFLECT: (ctx, card, slotIndex) => {
-    const totalArmor = card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats;
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats);
     return {
       ...ctx,
-      accumulatedArmor: ctx.accumulatedArmor + totalArmor,
-      slotArmors: updateArr(ctx.slotArmors, slotIndex, totalArmor),
+      accumulatedArmor: ctx.accumulatedArmor + total,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
       reflectPendingSlot: slotIndex,
-      reflectArmorValue: totalArmor, // 记录最终护盾值，用于完全格挡时加成下张攻击牌
+      reflectArmorValue: total,
       nextCardMultiplier: 1,
       nextCardRepeats: 1,
+      nextCardChainBonus: 0,
     };
   },
 
-  // --- 新效果：共鸣增幅V2 ---
-  RESONANCE_AMP_V2: (ctx, card) => {
-    // 下一张牌 x2
+  // 角斗士：本回合每有 1 个槽位将被攻击，总伤害 +N
+  GLADIATOR: (ctx, card) => ({
+    ...ctx,
+    accumulatedDamage: ctx.accumulatedDamage + card.baseValue * ctx.attackedSlotCount,
+  }),
+
+  // 复仇誓言：本场每失去 10 HP，下一张攻击 +N
+  REVENGE_VOW: (ctx, card) => ({
+    ...ctx,
+    nextCardFlatBonus: ctx.nextCardFlatBonus + card.baseValue * Math.floor(ctx.hpLostThisBattle / 10),
+  }),
+
+  // 黄金钟：获得护甲；本回合任意槽完全格挡 → 全局伤害本场+2（在阶段二结算）
+  GOLDEN_BELL: (ctx, card, slotIndex) => {
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * ctx.nextCardRepeats);
     return {
       ...ctx,
-      nextCardMultiplier: ctx.nextCardMultiplier * (card.baseValue || 2),
+      accumulatedArmor: ctx.accumulatedArmor + total,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
     };
   },
 
-  // --- 旧效果：共鸣增幅（预扫描阶段处理，主执行中跳过）---
-  RESONANCE_AMP: (ctx) => {
-    // 不消耗 multiplier/repeats，不产出数值
-    return ctx;
+  // ===== 焚身流 =====
+  // 血偿 / 燃烧意志：数值卡 + 焚身代价（baseValue 已含翻倍后数值，burnCost 在此登记）
+  BLOOD_PRICE: (ctx, card, slotIndex) => {
+    const pay = { paid: payBurn(ctx, card) };
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier * burnRepeatMultiplier(ctx, card);
+    const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
+    return {
+      ...ctx,
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      totalBurnHpCost: ctx.totalBurnHpCost + pay.paid.cost,
+      paidBurnCardIds: pay.paid.paidIds,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
+    };
   },
 
-  // --- 新效果：背水一战（标记传递，实际效果在 DEAL_DAMAGE 中） ---
-  DESPERATE_STRIKE: (ctx) => {
-    // 不消耗 multiplier/repeats，保持传递
-    return ctx;
+  BURN_WARD: (ctx, card, slotIndex) => {
+    const paid = payBurn(ctx, card);
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const total = Math.floor(card.baseValue * ctx.nextCardMultiplier * repeats * burnRepeatMultiplier(ctx, card));
+    return {
+      ...ctx,
+      accumulatedArmor: ctx.accumulatedArmor + total,
+      slotArmors: updateArr(ctx.slotArmors, slotIndex, total),
+      paidBurnCardIds: paid.paidIds,
+      totalBurnHpCost: ctx.totalBurnHpCost + paid.cost,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+    };
   },
 
-  // --- 新效果：连锁防线 ---
+  // 血怒：本回合每有一张焚身卡，全局伤害本场 +baseValue
+  BLOOD_RAGE: (ctx, card, _slotIndex, pipeline) => {
+    const burnCards = pipeline.filter((c) => c?.burnCost).length;
+    return {
+      ...ctx,
+      globalDamageBonus: ctx.globalDamageBonus + burnCards * card.baseValue,
+    };
+  },
+
+  // 焦土：造成伤害并点燃此槽 3 回合（该槽卡牌数值+100%）
+  SCORCH: (ctx, card, slotIndex) => {
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = perTriggerValue(card, ctx) * ctx.nextCardMultiplier;
+    const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
+    return {
+      ...ctx,
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      slotsToIgnite: [...ctx.slotsToIgnite, slotIndex],
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
+    };
+  },
+
+  // 亡命：HP≤50% 时下一张攻击 ×1.5（一次性）
+  DEADLY: (ctx) => ({
+    ...ctx,
+    deadlyMultiplier: ctx.deadlyEligible ? KEYWORD.DEADLY_MULTIPLIER : 1,
+    deadlyArmed: ctx.deadlyEligible,
+  }),
+
+  // 献祭：焚身5，全场动作牌本场 +N
+  SACRIFICE: (ctx, card) => {
+    const paid = payBurn(ctx, card);
+    return {
+      ...ctx,
+      globalDamageBonus: ctx.globalDamageBonus + card.baseValue,
+      paidBurnCardIds: paid.paidIds,
+      totalBurnHpCost: ctx.totalBurnHpCost + paid.cost,
+    };
+  },
+
+  // 不死鸟：焚身8：30 伤；HP≤10 时 45 伤
+  PHOENIX_STRIKE: (ctx, card, slotIndex) => {
+    const paid = payBurn(ctx, card);
+    const lowHp = ctx.playerHpCurrent > 0 && ctx.playerHpCurrent <= 10;
+    const value = lowHp ? card.baseValue + 15 : card.baseValue;
+    const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
+    const per = (value + ctx.globalDamageBonus + ctx.chainBonusPerTrigger) * ctx.nextCardMultiplier * burnRepeatMultiplier(ctx, card);
+    const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
+    return {
+      ...ctx,
+      accumulatedDamage: ctx.accumulatedDamage + total,
+      slotDamageContributions: updateArr(ctx.slotDamageContributions, slotIndex, total),
+      chainAttackCount: ctx.chainAttackCount + 1,
+      paidBurnCardIds: paid.paidIds,
+      totalBurnHpCost: ctx.totalBurnHpCost + paid.cost,
+      nextCardMultiplier: 1,
+      nextCardRepeats: 1,
+      nextCardChainBonus: 0,
+      nextCardFlatBonus: 0,
+      deadlyMultiplier: 1,
+      deadlyArmed: false,
+    };
+  },
+
+  // ===== 保留的特殊机制 =====
+  DESPERATE_STRIKE: (ctx) => ctx,
+
   CHAIN_DEFENSE: (ctx, _card, slotIndex, pipeline) => {
-    // 读取前面所有槽位中最高的护甲值（包括动作牌生成的护甲）
     let sourceArmor = 0;
     for (let i = slotIndex - 1; i >= 0; i--) {
-      // 只要有卡牌（无论类型），就取其护甲值
       if (pipeline[i]) {
         sourceArmor = Math.max(sourceArmor, ctx.slotArmors[i]);
       }
     }
     if (sourceArmor <= 0) return ctx;
 
-    // 将最高护盾值加到每一个槽位上（包括有防御卡的槽位）
     const newSlotArmors = [...ctx.slotArmors];
     for (let i = 0; i < pipeline.length; i++) {
-      if (i === slotIndex) continue; // 跳过自己
-      // 给每个槽位添加最高护盾值
+      if (i === slotIndex) continue;
       newSlotArmors[i] = (newSlotArmors[i] || 0) + sourceArmor;
     }
 
@@ -196,65 +470,72 @@ export const EffectRegistry: Record<string, EffectFunction> = {
   },
 };
 
-// --- executePipelineV2：两遍扫描 ---
+// --- executePipelineV2：预扫描（共鸣/燃烧/焦土/衰弱）+ 主执行 ---
 
 export function executePipelineV2(
   pipeline: (CardInstance | null)[],
   initialContext: ExecutionContext,
   slotStatuses: SlotStatus[],
+  resonanceBonusRate: number = KEYWORD.RESONANCE_BONUS,
 ): ExecutionContext {
   const slots = pipeline.length;
 
-  // 初始化槽位级别数组
-  let ctx: ExecutionContext = {
+  const ctx: ExecutionContext = {
     ...initialContext,
     slotArmors: new Array(slots).fill(0),
     slotDamageContributions: new Array(slots).fill(0),
     damageRedirectMap: {},
     reflectPendingSlot: null,
+    slotsToIgnite: [],
   };
 
-  // === 第一遍：预扫描（标记共鸣位、收集燃烧槽位） ===
-  const resonanceSlots = new Set<number>();
-  const burningSlots = new Set<number>();
-
+  // === 预扫描：共鸣乘区 ===
+  // 共鸣卡与左右相邻同类卡互相 +bonus（×定位仪倍率；定位仪在场即生效，与位置无关）
+  const resonanceMult = new Array(slots).fill(1);
+  const tunerPresent = pipeline.some((c) => c?.effectId === 'RESONANCE_TUNER');
+  const rate = resonanceBonusRate * (tunerPresent ? 2.5 : 1);
   for (let i = 0; i < slots; i++) {
     const card = pipeline[i];
-    // 预扫描标记旧版共鸣增幅（左右加成效果）
-    if (card && card.effectId === 'RESONANCE_AMP') {
-      resonanceSlots.add(i);
+    if (!card?.resonance) continue;
+    const kind = cardKind(card);
+    // 只统计与"非共鸣同类邻居"的连接；共鸣-共鸣相邻由各自扫描计一次，避免双重叠加
+    let bonus = 0;
+    if (i > 0 && pipeline[i - 1] && cardKind(pipeline[i - 1]!) === kind && !pipeline[i - 1]!.resonance) {
+      bonus += rate;
+      resonanceMult[i - 1] += rate;
     }
-    if (slotStatuses[i]?.statusEffects.some((e) => e.type === StatusEffectType.BURNING)) {
-      burningSlots.add(i);
+    if (i < slots - 1 && pipeline[i + 1] && cardKind(pipeline[i + 1]!) === kind && !pipeline[i + 1]!.resonance) {
+      bonus += rate;
+      resonanceMult[i + 1] += rate;
+    }
+    // 共鸣-共鸣相邻：互相加成，每对只算一次（由左侧卡发起）
+    if (i < slots - 1 && pipeline[i + 1]?.resonance && cardKind(pipeline[i + 1]!) === kind) {
+      bonus += rate;
+      resonanceMult[i + 1] += rate;
+    }
+    if (bonus > 0) {
+      resonanceMult[i] += bonus;
     }
   }
 
-  // === 第二遍：主执行 ===
+  // === 主执行 ===
   for (let i = 0; i < slots; i++) {
     const card = pipeline[i];
     if (!card) continue;
     if (slotStatuses[i]?.isLocked) continue;
 
-    // 旧版共鸣增幅卡本身不执行效果（已在预扫描中标记）
-    if (card.effectId === 'RESONANCE_AMP') continue;
+    // 状态乘区：燃烧减半 / 焦土翻倍
+    let statusMult = 1;
+    if (slotStatuses[i]?.statusEffects.some((e) => e.type === StatusEffectType.BURNING)) {
+      statusMult /= STATUS.BURNING_DIVISOR;
+    }
+    if (slotStatuses[i]?.statusEffects.some((e) => e.type === StatusEffectType.IGNITED)) {
+      statusMult *= STATUS.IGNITED_MULTIPLIER;
+    }
+    // 衰弱
+    if (ctx.weakened) statusMult *= STATUS.WEAKENED_MULTIPLIER;
 
-    // 计算旧版共鸣加成（左右都得有数值卡才生效）
-    let resonanceMultiplier = 1;
-    const hasLeftResonance = resonanceSlots.has(i - 1);
-    const hasRightResonance = resonanceSlots.has(i + 1);
-    const leftHasValue = i > 0 && pipeline[i - 1] !== null && pipeline[i - 1]?.effectId !== 'RESONANCE_AMP';
-    const rightHasValue = i < pipeline.length - 1 && pipeline[i + 1] !== null && pipeline[i + 1]?.effectId !== 'RESONANCE_AMP';
-    
-    if (hasLeftResonance && leftHasValue) resonanceMultiplier *= 2;
-    if (hasRightResonance && rightHasValue) resonanceMultiplier *= 2;
-
-    // 计算燃烧减益
-    let burningDivisor = 1;
-    if (burningSlots.has(i)) burningDivisor = 2;
-
-    // 创建临时卡牌副本（应用共鸣和燃烧）
-    let effectiveBaseValue = card.baseValue;
-    effectiveBaseValue = Math.floor(effectiveBaseValue * resonanceMultiplier / burningDivisor);
+    const effectiveBaseValue = Math.max(0, Math.floor(card.baseValue * resonanceMult[i] * statusMult));
 
     const tempCard: CardInstance = { ...card, baseValue: effectiveBaseValue };
 
@@ -264,7 +545,7 @@ export function executePipelineV2(
       continue;
     }
 
-    ctx = effectFn(ctx, tempCard, i, pipeline);
+    Object.assign(ctx, effectFn(ctx, tempCard, i, pipeline));
   }
 
   return ctx;
@@ -277,29 +558,22 @@ export function applyRelicEffectsToContext(
   pipeline: (CardInstance | null)[],
   relics: RelicId[],
 ): ExecutionContext {
-  let newCtx = { ...ctx };
+  const newCtx = { ...ctx };
 
-  // 遗物1：坚固壁垒 - 结算前每个槽位+2护甲
   if (relics.includes(RelicIdConst.SLOT_ARMOR_2)) {
     newCtx.slotArmors = newCtx.slotArmors.map((armor) => armor + 2);
     newCtx.accumulatedArmor += newCtx.slotArmors.length * 2;
   }
 
-  // 遗物2：狂战士之怒 - 无护盾牌时总伤害+20%
   if (relics.includes(RelicIdConst.NO_ARMOR_DAMAGE_20)) {
-    const hasArmorCard = pipeline.some(
-      (card) => card && card.effectId === 'GAIN_ARMOR'
-    );
+    const hasArmorCard = pipeline.some((card) => card && isShieldEffect(card.effectId));
     if (!hasArmorCard) {
       newCtx.accumulatedDamage = Math.floor(newCtx.accumulatedDamage * 1.2);
     }
   }
 
-  // 遗物4：防御反击 - 无攻击牌时总伤害+10
   if (relics.includes(RelicIdConst.NO_ATTACK_DAMAGE_10)) {
-    const hasAttackCard = pipeline.some(
-      (card) => card && card.effectId === 'DEAL_DAMAGE'
-    );
+    const hasAttackCard = pipeline.some((card) => card && isAttackEffect(card.effectId));
     if (!hasAttackCard) {
       newCtx.accumulatedDamage += 10;
     }
@@ -322,39 +596,30 @@ export function resolveSlotCombat(
   let newVulnerableStacks = 0;
   const slotsToMarkBurning: number[] = [];
   let reflectDamageBonus = 0;
-  let mirrorReflectBonus = 0;
   let resonanceTrigger = false;
+  let riposteDamage = 0;
+  let perfectBlockTrigger = false;
 
-  // 预扫描：找到所有共鸣增幅V2的位置及其目标槽位
-  const resonanceAmpV2Targets = new Set<number>();
-  // 检测是否有背水一战
-  let hasDesperateStrike = false;
+  // 预扫描
+  const resonanceAmpTargets = new Set<number>();
+  const hasDesperateStrike = pipeline.some((c) => c?.effectId === 'DESPERATE_STRIKE');
+  const hasGoldenBell = pipeline.some((c) => c?.effectId === 'GOLDEN_BELL');
   for (let i = 0; i < pipeline.length; i++) {
     const card = pipeline[i];
-    if (card?.effectId === 'RESONANCE_AMP_V2') {
-      // 找到下一张非空卡牌的位置
+    if (card?.effectId === 'RESONANCE_TUNER') {
       for (let j = i + 1; j < pipeline.length; j++) {
         if (pipeline[j]) {
-          // 如果下一张是盾，记录这个位置
-          const nextCard = pipeline[j];
-          if (nextCard?.effectId === 'GAIN_ARMOR' || nextCard?.effectId === 'MIRROR_REFLECT') {
-            resonanceAmpV2Targets.add(j);
-          }
+          if (isShieldEffect(pipeline[j]!.effectId)) resonanceAmpTargets.add(j);
           break;
         }
       }
     }
-    if (card?.effectId === 'DESPERATE_STRIKE') {
-      hasDesperateStrike = true;
-    }
   }
 
-  // 创建可修改的护甲数组（用于遗物效果）
-  let slotArmors = [...ctx.slotArmors];
+  const slotArmors = [...ctx.slotArmors];
 
-  // 遗物3：危险预警 - 给最高伤害槽位+5护甲
+  // 遗物3：危险预警
   if (relics.includes(RelicIdConst.HIGH_DMG_SLOT_ARMOR_5)) {
-    // 找出将被攻击的最高伤害槽位
     let maxDamage = -1;
     let targetSlot = -1;
     for (const attack of intent.attacks) {
@@ -368,7 +633,7 @@ export function resolveSlotCombat(
     }
   }
 
-  // 遗物5：侧翼防护 - 当最左或最右槽位被攻击时，给所有被攻击槽位+8护甲
+  // 遗物5：侧翼防护
   if (relics.includes(RelicIdConst.EDGE_SLOT_ARMOR_8)) {
     const isLeftEdgeAttacked = intent.attacks.some((a) => a.slotIndex === 0);
     const isRightEdgeAttacked = intent.attacks.some((a) => a.slotIndex === pipeline.length - 1);
@@ -386,47 +651,46 @@ export function resolveSlotCombat(
   let resolvedAttacks: SlotAttack[];
 
   if (intent.pattern === AttackPattern.WEAK_POINT_SNIPE) {
-    // 找 pipeline 中 baseValue 最高的非空卡所在 slotIndex
     let maxBaseValue = -1;
     let targetSlot = 0;
+    let hasCard = false;
     for (let i = 0; i < pipeline.length; i++) {
       const card = pipeline[i];
       if (card && card.baseValue > maxBaseValue) {
         maxBaseValue = card.baseValue;
         targetSlot = i;
+        hasCard = true;
       }
     }
-    // 从 intent.attacks 中读取 damage（存在 slotIndex=-1 的占位项）
     const damage = intent.attacks.length > 0 ? intent.attacks[0].damage : 0;
-    resolvedAttacks = maxBaseValue >= 0 ? [{ slotIndex: targetSlot, damage }] : [];
+    resolvedAttacks = hasCard ? [{ slotIndex: targetSlot, damage }] : [];
   } else {
     resolvedAttacks = intent.attacks;
   }
 
-  // 遍历每个被攻击的槽位
+  // 反击遗器
+  const riposteMultiplier = relics.includes(RelicIdConst.RIPOSTE_ENGINE)
+    ? KEYWORD.RIPOSTE_ENGINE_MULTIPLIER
+    : 1;
+
   for (const attack of resolvedAttacks) {
-    // 检查伤害转移（移形换影）
     let actualSlot = attack.slotIndex;
     if (ctx.damageRedirectMap[actualSlot] !== undefined) {
       actualSlot = ctx.damageRedirectMap[actualSlot];
     }
 
-    // 确保 actualSlot 在范围内
     if (actualSlot < 0 || actualSlot >= pipeline.length) continue;
 
     let incomingDamage = attack.damage;
 
-    // 应用破绽加成
     if (playerVulnerableStacks > 0) {
-      incomingDamage = Math.floor(incomingDamage * (1 + 0.15 * playerVulnerableStacks));
+      incomingDamage = Math.floor(incomingDamage * (1 + STATUS.VULNERABLE_DAMAGE_AMP_PER_STACK * playerVulnerableStacks));
     }
 
     const card = pipeline[actualSlot];
     let armor = slotArmors[actualSlot] ?? 0;
-    
-    // 特殊处理：连锁防线卡 - 计算它应该获得的额外护甲值
+
     if (card?.effectId === 'CHAIN_DEFENSE') {
-      // 找到前面所有槽位中最高的护甲值
       let sourceArmor = 0;
       for (let i = actualSlot - 1; i >= 0; i--) {
         if (pipeline[i]) {
@@ -434,7 +698,7 @@ export function resolveSlotCombat(
         }
       }
       if (sourceArmor > 0) {
-        armor += sourceArmor; // 添加最高护盾值到当前护甲
+        armor += sourceArmor;
       }
     }
 
@@ -443,37 +707,42 @@ export function resolveSlotCombat(
     let isVulnerablePenalty = false;
 
     if (card === null) {
-      // 情况C：空门大开
       hpLoss = incomingDamage;
       isVulnerablePenalty = true;
       newVulnerableStacks += 1;
     } else if (card.type === CardType.MODIFIER && !isCardUseful(card, actualSlot, pipeline)) {
-      // 情况C：无效修饰卡（右侧没有后续卡可修饰）
       hpLoss = incomingDamage;
       isVulnerablePenalty = true;
       newVulnerableStacks += 1;
     } else if (armor > 0) {
-      // 情况A：防御抵消
       blockedDamage = Math.min(armor, incomingDamage);
       hpLoss = incomingDamage - blockedDamage;
 
-      // 镜面反射效果：完全格挡时，给总伤害加上此格的护盾值
-      if (ctx.reflectPendingSlot === actualSlot && hpLoss === 0) {
-        reflectDamageBonus += ctx.reflectArmorValue;
-      }
+      if (hpLoss === 0) {
+        perfectBlockTrigger = true;
 
-      // 共鸣增幅V2效果：若此格是共鸣增幅的下一张盾且完美格挡，触发全局buff
-      if (resonanceAmpV2Targets.has(actualSlot) && hpLoss === 0) {
-        resonanceTrigger = true;
+        // 镜面反射：反弹等盾值伤害
+        if (ctx.reflectPendingSlot === actualSlot) {
+          reflectDamageBonus += ctx.reflectArmorValue;
+        }
+
+        // 反击关键词：完美格挡触发
+        if (card.riposte && card.riposte > 0) {
+          riposteDamage += Math.floor(card.riposte * riposteMultiplier);
+        }
+
+        // 共鸣增幅（定位仪链）
+        if (resonanceAmpTargets.has(actualSlot)) {
+          resonanceTrigger = true;
+        }
       }
     } else {
-      // 情况B：换血拼刀
+      // 无护甲但有有效卡：换血拼刀（反击不触发——只有完美格挡触发）
       hpLoss = incomingDamage;
     }
 
     totalPlayerHpLoss += hpLoss;
 
-    // 蔓延型：未完全格挡则标记燃烧
     if (intent.pattern === AttackPattern.SPREADING_FLAME && hpLoss > 0) {
       slotsToMarkBurning.push(actualSlot);
     }
@@ -487,43 +756,48 @@ export function resolveSlotCombat(
     });
   }
 
+  // 受身：统计受身槽被攻击次数（无论格挡与否），供 gameStore 转化全局成长
+  let riposteGuardHits = 0;
+  for (let i = 0; i < pipeline.length; i++) {
+    if (pipeline[i]?.effectId === 'RIPOSTE_GUARD') {
+      riposteGuardHits += slotResults.filter((r) => r.slotIndex === i).length;
+    }
+  }
+
+  // 黄金钟：本回合存在完美格挡 → 触发标记（gameStore 转化为全局成长）
+  const goldenBellTrigger = perfectBlockTrigger && hasGoldenBell;
+
   return {
     slotResults,
     totalPlayerHpLoss,
     newVulnerableStacks,
     slotsToMarkBurning,
     reflectDamageBonus,
-    mirrorReflectBonus,
     resonanceTrigger,
     hasDesperateStrike,
-    slotLinks: [], // 在 gameStore 中单独计算
+    slotLinks: [],
+    riposteDamage,
+    riposteGuardHits,
+    perfectBlockTrigger: goldenBellTrigger,
   };
 }
 
 // 判断修饰卡是否有效（右侧是否有后续卡可修饰）
 function isCardUseful(card: CardInstance, slotIndex: number, pipeline: (CardInstance | null)[]): boolean {
   if (card.type !== CardType.MODIFIER) return true;
-  // 共鸣增幅只要左右有邻居就有效
-  if (card.effectId === 'RESONANCE_AMP') {
-    const hasLeft = slotIndex > 0 && pipeline[slotIndex - 1] !== null;
-    const hasRight = slotIndex < pipeline.length - 1 && pipeline[slotIndex + 1] !== null;
-    return hasLeft || hasRight;
-  }
-  // 连锁防线只要前面有护甲卡就有效
   if (card.effectId === 'CHAIN_DEFENSE') {
     for (let i = slotIndex - 1; i >= 0; i--) {
       if (pipeline[i]) return true;
     }
     return false;
   }
-  // 其他修饰卡：右侧需要有后续非空卡
   for (let i = slotIndex + 1; i < pipeline.length; i++) {
     if (pipeline[i]) return true;
   }
   return false;
 }
 
-// --- 模拟预计算（用于背水一战） ---
+// --- 模拟预计算（用于背水一战/预览） ---
 
 export function simulateForDesperateStrike(
   pipeline: (CardInstance | null)[],
@@ -531,18 +805,7 @@ export function simulateForDesperateStrike(
   intent: EnemyIntent,
   playerVulnerableStacks: number,
 ): number {
-  // 做一次快速模拟（desperateHpLoss = 0）
-  const simCtx = executePipelineV2(pipeline, { ...INITIAL_CONTEXT, desperateHpLoss: 0 }, slotStatuses);
+  const simCtx = executePipelineV2(pipeline, { ...INITIAL_CONTEXT, desperateHpLoss: 0, playerHpCurrent: 100 }, slotStatuses);
   const simResult = resolveSlotCombat(simCtx, intent, pipeline, playerVulnerableStacks);
   return simResult.totalPlayerHpLoss;
-}
-
-// 保持向后兼容的旧函数（不再使用但避免编译错误）
-export function executePipeline(
-  cards: CardInstance[],
-  initialContext: ExecutionContext,
-): ExecutionContext {
-  const pipeline: (CardInstance | null)[] = cards;
-  const emptyStatuses: SlotStatus[] = cards.map(() => ({ isLocked: false, statusEffects: [] }));
-  return executePipelineV2(pipeline, initialContext, emptyStatuses);
 }
