@@ -745,3 +745,8 @@ export const useGameStore = create<GameState>()(
     },
   })),
 );
+
+// 开发/测试调试钩子
+if (import.meta.env.DEV) {
+  (window as Window & { __gameStore?: typeof useGameStore }).__gameStore = useGameStore;
+}

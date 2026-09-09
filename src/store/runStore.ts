@@ -538,3 +538,14 @@ export function getCurrentMapNode(): MapNode | null {
   }
   return null;
 }
+
+// 开发/测试调试钩子：浏览器控制台可直接检查 store
+declare global {
+  interface Window {
+    __runStore?: typeof useRunStore;
+    __gameStore?: object;
+  }
+}
+if (import.meta.env.DEV) {
+  (window as Window).__runStore = useRunStore;
+}

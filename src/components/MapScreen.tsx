@@ -415,18 +415,19 @@ export function MapScreen() {
                   }}
                   className={isClickable ? 'cursor-pointer' : ''}
                 >
-                  {/* 可选节点的发光效果 */}
+                  {/* 可选节点的发光效果（用 transform 缩放代替 r 动画，避免 SVG 属性动画兼容问题） */}
                   {isClickable && (
                     <motion.circle
                       cx={pos.x}
                       cy={pos.y}
-                      r={32}
+                      r={34}
                       fill="none"
                       stroke={color}
                       strokeWidth={2}
                       opacity={0.4}
+                      style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
                       animate={{
-                        r: [32, 36, 32],
+                        scale: [1, 1.12, 1],
                         opacity: [0.2, 0.5, 0.2],
                       }}
                       transition={{ duration: 1.5, repeat: Infinity }}
