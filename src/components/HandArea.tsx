@@ -57,7 +57,7 @@ export function HandArea() {
   const phase = useGameStore((s) => s.phase);
 
   return (
-    <div className="flex flex-col items-center gap-1 py-2">
+    <div className="flex flex-col items-center gap-0.5 pt-2">
       {phase === 'PLAY' && hand.length > 0 && (
         <span className="text-[10px] text-green-400/60">拖拽卡牌到上方槽位</span>
       )}

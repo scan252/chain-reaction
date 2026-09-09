@@ -248,7 +248,7 @@ function SlotAttackIndicator({ slotIndex }: { slotIndex: number }) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="absolute -top-14 left-1/2 -translate-x-1/2 font-black text-red-500 bg-red-950/90 border-2 border-red-500/70 rounded-xl px-4 py-2 whitespace-nowrap z-10 shadow-lg shadow-red-900/50"
+      className="absolute -top-12 left-1/2 -translate-x-1/2 font-black text-red-500 bg-red-950/90 border-2 border-red-500/70 rounded-xl px-4 py-2 whitespace-nowrap z-10 shadow-lg shadow-red-900/50"
       style={{
         fontSize: '24px',
         textShadow: '0 0 12px rgba(239, 68, 68, 1), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
@@ -264,8 +264,8 @@ function SlotPreviewOverlay({ preview }: { preview: SlotPreview }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="absolute -top-44 left-1/2 -translate-x-1/2 font-bold bg-black/95 border-2 border-white/40 rounded-2xl px-5 py-3 whitespace-nowrap z-20 flex flex-col items-center gap-2 shadow-2xl"
-      style={{ fontSize: '16px' }}
+      className="absolute top-full mt-1 left-1/2 -translate-x-1/2 font-bold bg-black/95 pointer-events-none border-2 border-white/40 rounded-2xl px-4 py-2 whitespace-nowrap z-20 flex flex-col items-center gap-0.5 shadow-2xl"
+      style={{ fontSize: '13px' }}
     >
       <span className="text-red-400 text-shadow">⚔ 受击 {preview.incomingDamage}</span>
       {preview.blockedDamage > 0 && (
@@ -322,7 +322,7 @@ function PipelineSlot({ index }: { index: number }) {
       ref={setNodeRef}
       data-slot-index={index}
       className={`
-        w-32 h-44 rounded-xl border-2 border-dashed flex items-center justify-center
+        w-32 h-40 rounded-xl border-2 border-dashed flex items-center justify-center
         transition-colors relative touch-none
         ${isLocked
           ? 'border-purple-500/50 bg-purple-900/20'
@@ -361,7 +361,7 @@ function PipelineSlot({ index }: { index: number }) {
       {/* 焦土点燃指示器 */}
       {isIgnited && !isLocked && (
         <motion.div
-          className="absolute -top-2 left-0 text-sm"
+          className="absolute top-1 left-1 text-sm"
           animate={{ scale: [1, 1.25, 1], rotate: [0, 8, -8, 0] }}
           transition={{ duration: 0.9, repeat: Infinity }}
           title="焦土：此槽卡牌数值 +100%"
@@ -373,7 +373,7 @@ function PipelineSlot({ index }: { index: number }) {
       {/* 燃烧指示器 */}
       {isBurning && !isLocked && (
         <motion.div
-          className="absolute -top-2 right-0 text-sm"
+          className="absolute top-1 right-1 text-sm"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 0.8, repeat: Infinity }}
         >
@@ -453,8 +453,8 @@ export function PipelineBoard() {
             backgroundColor: 'rgba(15, 23, 42, 0.7)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            margin: '-12px -16px -8px -16px',
-            padding: '12px 16px 8px 16px',
+            margin: '-10px -16px -6px -16px',
+            padding: '10px 16px 6px 16px',
           }}
         />
         {/* 动态槽位 */}
@@ -507,7 +507,7 @@ export function PipelineBoard() {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: Math.min(i * 0.05, 0.4) }}
-                className="text-xs px-2 py-1 rounded-full bg-white/10 text-yellow-300/80 text-shadow-sm"
+                className="text-xs px-2 py-1 rounded-full bg-black/40 text-amber-200"
               >
                 {log}
               </motion.span>

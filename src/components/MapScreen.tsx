@@ -231,7 +231,7 @@ export function MapScreen() {
         {/* 标题 */}
         <div className="text-center py-4">
           <h1 className="text-2xl font-bold text-white tracking-wider">冒险地图</h1>
-          <p className="text-sm text-white/50">选择下一个节点</p>
+          <p className="text-sm text-white/50">选择下一个节点 <span className="text-white/30">（地图可滚动 ↓）</span></p>
         </div>
 
         {/* 地图容器 */}
@@ -465,8 +465,8 @@ export function MapScreen() {
                     x={pos.x}
                     y={pos.y + 38}
                     textAnchor="middle"
-                    fontSize={10}
-                    fill={node.visited ? '#64748b' : '#94a3b8'}
+                    fontSize={11}
+                    fill={node.visited ? '#8494ab' : '#c4d2e8'}
                   >
                     {NODE_LABEL[node.type]}
                   </text>

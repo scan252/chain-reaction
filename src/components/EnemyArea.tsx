@@ -38,7 +38,7 @@ export function EnemyArea() {
   const isElite = enemy.isElite ?? false;
 
   return (
-    <div className="flex flex-col items-center gap-2 py-3 w-full px-4">
+    <div className="flex flex-col items-center gap-1 py-1 w-full px-4">
       {/* 血量条 */}
       <div className={`${isBoss ? 'max-w-[864px]' : 'max-w-[432px]'} w-full flex items-center gap-3 mb-4`}>
         <div className="flex-1 h-4 rounded-full bg-gray-800 border border-gray-700 overflow-hidden relative">
@@ -62,7 +62,7 @@ export function EnemyArea() {
 
       {/* 敌人图像（精英/Boss 皇冠标识） */}
       <motion.div
-        className={`w-36 h-36 rounded-3xl flex items-center justify-center text-6xl overflow-hidden border-2 ${
+        className={`w-36 h-36 rounded-3xl flex items-center justify-center text-4xl overflow-hidden border-2 ${
           isBoss
             ? 'bg-gradient-to-br from-red-900/50 to-red-950/80 border-red-500/60'
             : isElite
@@ -87,14 +87,14 @@ export function EnemyArea() {
 
       {/* 敌人名称 + 头衔 */}
       <motion.h2
-        className="text-lg font-bold text-red-400 tracking-wider mt-2 text-shadow-heavy"
+        className="text-base font-bold text-red-400 tracking-wider mt-1 text-shadow-heavy"
         animate={isAttacking ? { scale: [1, 1.1, 1] } : {}}
         transition={{ duration: 0.5 }}
       >
         {isBoss && '👑 '}{isElite && '🎖️ '}{enemy.name}
       </motion.h2>
       {(isBoss || isElite) && (
-        <span className={`text-xs font-bold -mt-1 ${isBoss ? 'text-yellow-400' : 'text-amber-300'}`}>
+        <span className={`text-xs font-bold ${isBoss ? 'text-yellow-400' : 'text-amber-300'}`}>
           {isBoss ? 'BOSS' : '精英'}
         </span>
       )}

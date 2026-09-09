@@ -78,13 +78,13 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         transition={{ delay: 0.2 }}
         className="w-full max-w-2xl mb-12"
       >
-        <label className="block text-white/60 text-2xl mb-4">冒险者名称</label>
+        <label className="block text-white/90 text-2xl mb-4 font-bold">冒险者名称</label>
         <input
           type="text"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
           placeholder="输入你的名字..."
-          className="w-full h-[50px] px-6 bg-white/5 border border-white/20 rounded-xl text-white text-xl placeholder-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
+          className="w-full h-[50px] px-6 bg-white/5 border-2 border-white/40 rounded-xl text-white text-xl placeholder-white/40 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
           maxLength={12}
         />
       </motion.div>
@@ -96,7 +96,7 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         transition={{ delay: 0.3 }}
         className="w-full max-w-lg mb-10"
       >
-        <label className="block text-white/60 text-lg mb-4">选择职业</label>
+        <label className="block text-white/90 text-lg mb-4 font-bold">选择职业</label>
         <div className="grid grid-cols-2 gap-4">
           {(Object.keys(CLASS_INFO) as PlayerClass[]).map((cls) => {
             const info = CLASS_INFO[cls];
@@ -143,7 +143,7 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         transition={{ delay: 0.35 }}
         className="w-full max-w-lg mb-8"
       >
-        <label className="block text-white/60 text-lg mb-3">选择难度</label>
+        <label className="block text-white/90 text-lg mb-3 font-bold">选择难度</label>
         <div className="grid grid-cols-2 gap-3">
           {(Object.keys(DIFFICULTY_INFO) as Difficulty[]).map((diff) => {
             const info = DIFFICULTY_INFO[diff];
@@ -163,7 +163,7 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
                 <span className="text-2xl">{info.icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-bold">{info.name}</div>
-                  <div className="text-white/40 text-xs">{info.description}</div>
+                  <div className="text-white/40 text-xs pr-1">{info.description}</div>
                 </div>
               </motion.button>
             );
@@ -180,13 +180,13 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         whileTap={{ scale: playerName.trim() && selectedClass ? 0.95 : 1 }}
         onClick={handleStart}
         disabled={!playerName.trim() || !selectedClass}
-        className={`w-[200px] h-[50px] rounded-2xl font-bold text-xl transition-all flex items-center justify-center ${
+        className={`w-[260px] h-[50px] rounded-2xl font-bold text-lg transition-all flex items-center justify-center border ${
           playerName.trim() && selectedClass
-            ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 text-white shadow-2xl shadow-purple-500/20 cursor-pointer'
-            : 'bg-white/10 text-white/30 cursor-not-allowed'
+            ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 text-white border-transparent shadow-2xl shadow-purple-500/20 cursor-pointer'
+            : 'bg-slate-800/80 text-white/60 border-white/30 cursor-not-allowed'
         }`}
       >
-        开始冒险
+        {playerName.trim() && selectedClass ? '开始冒险' : '填写名字并选择职业'}
       </motion.button>
     </div>
   );

@@ -250,7 +250,7 @@ export function GameArena() {
               initial={{ scale: 1.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className='absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none'
+              className='absolute top-1/3 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-black/50 rounded-xl px-4 py-1'
             >
               <span
                 className='font-black text-4xl'
@@ -302,7 +302,7 @@ export function GameArena() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleVictory}
-                    className="px-12 py-4 rounded-xl font-bold text-xl tracking-wider bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 cursor-pointer"
+                    className="px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 cursor-pointer"
                   >
                     领取奖励
                   </motion.button>
@@ -313,7 +313,7 @@ export function GameArena() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onBattleDefeat}
-                    className="px-12 py-4 rounded-xl font-bold text-xl tracking-wider bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg shadow-gray-500/30 cursor-pointer"
+                    className="px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg shadow-gray-500/30 cursor-pointer"
                   >
                     战败 - 查看结算
                   </motion.button>
@@ -335,14 +335,14 @@ export function GameArena() {
         {/* 底部区域：上横条 - 执行结算按钮 | 中横条 - 角色占位+HP/MP | 下横条 - 手牌区+牌堆 | 底横条 - 提示文字 */}
         <div className="shrink-0 flex flex-col relative z-20">
           {/* 上横条：执行结算 / 下一回合 按钮 */}
-          <div className="flex justify-center pt-8 pb-2">
+          <div className="flex justify-center pt-2 pb-1">
             {phase === 'PLAY' && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleExecute}
                 disabled={!hasCards}
-                className={`px-12 py-4 rounded-xl font-bold text-xl tracking-wider transition-all ${
+                className={`px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider transition-all ${
                   hasCards
                     ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
                     : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -359,7 +359,7 @@ export function GameArena() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleNextTurn}
-                className="px-12 py-4 rounded-xl font-bold text-xl tracking-wider bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 cursor-pointer"
+                className="px-10 py-2.5 rounded-xl font-bold text-lg tracking-wider bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 cursor-pointer"
               >
                 下一回合
               </motion.button>
@@ -371,11 +371,11 @@ export function GameArena() {
             {/* 左侧：角色占位区 */}
             <div
               ref={characterRef}
-              className="flex flex-col items-center justify-center shrink-0 w-[160px] relative"
+              className="flex flex-col items-center justify-center shrink-0 w-[130px] relative"
               onClick={() => setShowSkillButton((v) => !v)}
             >
               {/* 角色大占位区 */}
-              <div className="w-36 h-44 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-purple-800/20 border-2 border-dashed border-white/20 flex flex-col items-center justify-center relative cursor-pointer hover:border-white/40 transition-colors overflow-hidden">
+              <div className="w-28 h-36 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-purple-800/20 border-2 border-dashed border-white/20 flex flex-col items-center justify-center relative cursor-pointer hover:border-white/40 transition-colors overflow-hidden">
                 {playerProfile && CLASS_IMAGES[playerProfile.class] ? (
                   <img
                     src={CLASS_IMAGES[playerProfile.class]}
@@ -426,7 +426,7 @@ export function GameArena() {
             </div>
 
             {/* 角色右侧：HP/MP条（放大，紧贴） */}
-            <div className="flex flex-col justify-center gap-3 w-48">
+            <div className="flex flex-col justify-center gap-1.5 w-48">
               {/* 玩家名称 */}
               {playerProfile && (
                 <div className="text-center mb-1">
@@ -488,7 +488,7 @@ export function GameArena() {
           </div>
 
           {/* 下横条：操作按钮 + 提示文字 */}
-          <div className="flex flex-col items-center justify-center py-2 gap-3">
+          <div className="flex flex-col items-center justify-center py-1 gap-1">
             {/* 提示文字 - 只在非结算/胜利/失败状态显示 */}
             {phase === 'PLAY' && (
               <div className="flex items-center gap-2 text-sm text-white/50">
