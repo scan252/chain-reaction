@@ -1,35 +1,36 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
+import { Icon, type IconName } from './icons';
 import type { PlayerClass, Difficulty } from '../types';
 import { CLASS_MAX_MP } from '../types';
 
-const CLASS_INFO: Record<PlayerClass, { name: string; icon: string; description: string; skill: string; image?: string }> = {
+const CLASS_INFO: Record<PlayerClass, { name: string; icon: IconName; description: string; skill: string; image?: string }> = {
   WARRIOR: {
     name: '勇士',
-    icon: '⚔️',
+    icon: 'swords',
     description: '坚韧不拔的近战专家',
-    skill: '技能：强化 - 在手牌中添加一张"强化"卡（下一张牌x4），消耗1点MP',
+    skill: '技能·强化：在手牌中添加一张「强化」（下一张牌 ×4），消耗 1 点灵力',
     image: '/pic/pro/pro1.webp',
   },
   PRIEST: {
     name: '牧师',
-    icon: '✨',
+    icon: 'sparkle',
     description: '神圣的治疗者',
-    skill: '技能：治疗 - 回复自身20点生命值，消耗1点MP',
+    skill: '技能·治疗：回复自身 20 点生命值，消耗 1 点灵力',
     image: '/pic/pro/pro2.webp',
   },
 };
 
-const DIFFICULTY_INFO: Record<Difficulty, { name: string; icon: string; description: string }> = {
+const DIFFICULTY_INFO: Record<Difficulty, { name: string; icon: IconName; description: string }> = {
   NORMAL: {
     name: '标准',
-    icon: '🌿',
+    icon: 'tent',
     description: '经典冒险难度，适合初次游玩',
   },
   ELITE: {
     name: '精英',
-    icon: '💀',
+    icon: 'skull',
     description: '敌人 +25% 生命 / +15% 攻击，稀有卡掉率提升',
   },
 };
@@ -55,24 +56,23 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
     onStartGame?.();
   };
 
+  const ready = !!playerName.trim() && !!selectedClass;
+
   return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat px-8 py-12"
-      style={{ backgroundImage: 'url(/pic/P1.webp)' }}
-    >
+    <div className="scene scene-aurora vignette grain flex flex-col items-center justify-center min-h-screen px-8 py-10 overflow-y-auto">
       <motion.div
         initial={{ y: -24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="flex flex-col items-center mb-10"
+        className="relative z-10 flex flex-col items-center mb-8"
       >
         <div className="flex items-center gap-4 mb-4">
           <span className="hairline-gold w-12" />
           <span className="section-label">NEW&nbsp;JOURNEY</span>
           <span className="hairline-gold w-12" />
         </div>
-        <h1 className="display-title text-6xl leading-none">创建角色</h1>
-        <p className="mt-4 text-sm tracking-[0.4em] text-[var(--text-secondary)] pl-[0.4em]">选择你的身份，开始冒险</p>
+        <h1 className="display-title text-5xl leading-none">创建角色</h1>
+        <p className="mt-4 etch-label" style={{ letterSpacing: '0.4em', fontSize: 11 }}>选择你的身份 · 开始冒险</p>
       </motion.div>
 
       {/* 姓名输入 */}
@@ -80,15 +80,23 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="w-full max-w-2xl mb-12"
+        className="relative z-10 w-full max-w-lg mb-8"
       >
-        <label className="block text-white/90 text-2xl mb-4 font-bold">冒险者名称</label>
+        <label className="etch-label block mb-2.5" style={{ fontSize: 11 }}>冒险者名称</label>
         <input
           type="text"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
-          placeholder="输入你的名字..."
-          className="w-full h-[50px] px-6 bg-white/5 border-2 border-white/40 rounded-xl text-white text-xl placeholder-white/40 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
+          placeholder="输入你的名字…"
+          className="w-full h-[48px] px-5 rounded-[10px] text-lg font-bold tracking-wider focus:outline-none transition-all"
+          style={{
+            background: 'rgba(10,13,22,0.72)',
+            border: '1px solid var(--line)',
+            color: 'var(--text-primary)',
+            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.45)',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--line-brass)'; e.currentTarget.style.boxShadow = 'inset 0 2px 8px rgba(0,0,0,0.45), 0 0 14px rgba(200,162,78,0.15)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.boxShadow = 'inset 0 2px 8px rgba(0,0,0,0.45)'; }}
           maxLength={12}
         />
       </motion.div>
@@ -98,9 +106,9 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="w-full max-w-lg mb-10"
+        className="relative z-10 w-full max-w-2xl mb-8"
       >
-        <label className="block text-white/90 text-lg mb-4 font-bold">选择职业</label>
+        <label className="etch-label block mb-2.5" style={{ fontSize: 11 }}>选择职业</label>
         <div className="grid grid-cols-2 gap-4">
           {(Object.keys(CLASS_INFO) as PlayerClass[]).map((cls) => {
             const info = CLASS_INFO[cls];
@@ -108,32 +116,51 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
             return (
               <motion.button
                 key={cls}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setSelectedClass(cls)}
-                className={`flex items-center gap-5 p-5 rounded-xl border transition-all text-left ${
+                className="panel flex items-center gap-4 p-4 text-left transition-all"
+                style={
                   isSelected
-                    ? 'bg-[rgba(212,169,92,0.12)] border-[var(--gold-500)]/60 shadow-[0_0_18px_rgba(212,169,92,0.2)]'
-                    : 'bg-white/[0.04] border-[var(--line)] hover:bg-white/[0.08]'
-                }`}
+                    ? { borderColor: 'var(--line-brass)', boxShadow: '0 0 22px rgba(200,162,78,0.22), 0 12px 32px rgba(3,4,8,0.55)' }
+                    : undefined
+                }
               >
-                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center text-4xl shrink-0 overflow-hidden">
+                <div
+                  className="w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0"
+                  style={{
+                    border: isSelected ? '1.5px solid var(--line-brass)' : '1.5px solid var(--line)',
+                    boxShadow: '0 4px 14px rgba(3,4,8,0.5)',
+                  }}
+                >
                   {info.image ? (
                     <img src={info.image} alt={info.name} className="w-full h-full object-cover" />
                   ) : (
-                    info.icon
+                    <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #232c47, #131829)', color: 'var(--brass-300)' }}>
+                      <Icon name={info.icon} size={28} />
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-white font-bold text-xl">{info.name}</span>
-                    <span className="text-xs text-[#b79ae8] bg-[rgba(157,123,224,0.14)] px-2 py-0.5 rounded num">
-                      MP上限: {CLASS_MAX_MP[cls]}
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <span className="font-black text-lg" style={{ color: isSelected ? 'var(--brass-200)' : 'var(--text-primary)' }}>{info.name}</span>
+                    <span
+                      className="num inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-[2px] rounded-full"
+                      style={{ color: 'var(--mana-300)', background: 'rgba(168,127,224,0.12)', border: '1px solid rgba(168,127,224,0.35)' }}
+                    >
+                      <Icon name="drop" size={9} />
+                      {CLASS_MAX_MP[cls]}
                     </span>
                   </div>
-                  <p className="text-white/50 text-base mb-1">{info.description}</p>
-                  <p className="text-white/40 text-sm">{info.skill}</p>
+                  <p className="text-[13px] mb-1" style={{ color: 'var(--text-secondary)' }}>{info.description}</p>
+                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{info.skill}</p>
                 </div>
+                {/* 选中角标 */}
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--brass-500)', color: '#241a08' }}>
+                    <Icon name="check" size={11} strokeWidth={3} />
+                  </div>
+                )}
               </motion.button>
             );
           })}
@@ -145,29 +172,39 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35 }}
-        className="w-full max-w-lg mb-8"
+        className="relative z-10 w-full max-w-2xl mb-9"
       >
-        <label className="block text-white/90 text-lg mb-3 font-bold">选择难度</label>
-        <div className="grid grid-cols-2 gap-3">
+        <label className="etch-label block mb-2.5" style={{ fontSize: 11 }}>选择难度</label>
+        <div className="grid grid-cols-2 gap-4">
           {(Object.keys(DIFFICULTY_INFO) as Difficulty[]).map((diff) => {
             const info = DIFFICULTY_INFO[diff];
             const isSelected = difficulty === diff;
             return (
               <motion.button
                 key={diff}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setDifficulty(diff)}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                className="panel flex items-center gap-3 p-3.5 text-left transition-all"
+                style={
                   isSelected
-                    ? 'bg-[rgba(212,169,92,0.14)] border-[var(--gold-500)]/60 shadow-[0_0_18px_rgba(212,169,92,0.2)]'
-                    : 'bg-white/[0.04] border-[var(--line)] hover:bg-white/[0.08]'
-                }`}
+                    ? { borderColor: 'var(--line-brass)', boxShadow: '0 0 22px rgba(200,162,78,0.22), 0 12px 32px rgba(3,4,8,0.55)' }
+                    : undefined
+                }
               >
-                <span className="text-2xl">{info.icon}</span>
+                <span
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    color: isSelected ? 'var(--brass-300)' : 'var(--text-muted)',
+                    background: 'rgba(10,13,22,0.6)',
+                    border: '1px solid var(--line-soft)',
+                  }}
+                >
+                  <Icon name={info.icon} size={17} />
+                </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-bold">{info.name}</div>
-                  <div className="text-white/40 text-xs pr-1">{info.description}</div>
+                  <div className="font-black" style={{ color: isSelected ? 'var(--brass-200)' : 'var(--text-primary)' }}>{info.name}</div>
+                  <div className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{info.description}</div>
                 </div>
               </motion.button>
             );
@@ -180,17 +217,21 @@ export function PlayerCreation({ onStartGame }: PlayerCreationProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        whileHover={{ scale: playerName.trim() && selectedClass ? 1.05 : 1 }}
-        whileTap={{ scale: playerName.trim() && selectedClass ? 0.95 : 1 }}
+        whileHover={ready ? { scale: 1.04 } : {}}
+        whileTap={ready ? { scale: 0.96 } : {}}
         onClick={handleStart}
-        disabled={!playerName.trim() || !selectedClass}
-        className={`w-[260px] h-[50px] rounded-2xl font-bold text-lg transition-all flex items-center justify-center border ${
-          playerName.trim() && selectedClass
-            ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 text-white border-transparent shadow-2xl shadow-purple-500/20 cursor-pointer'
-            : 'bg-slate-800/80 text-white/60 border-white/30 cursor-not-allowed'
-        }`}
+        disabled={!ready}
+        className="relative z-10 btn btn-primary btn-xl"
+        style={{ minWidth: 280 }}
       >
-        {playerName.trim() && selectedClass ? '开始冒险' : '填写名字并选择职业'}
+        {ready ? (
+          <>
+            <Icon name="swords" size={17} />
+            开始冒险
+          </>
+        ) : (
+          '填写名字并选择职业'
+        )}
       </motion.button>
     </div>
   );

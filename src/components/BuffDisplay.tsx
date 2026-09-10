@@ -3,16 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { StatusEffectType } from '../types';
 import { STATUS } from '../config/balance';
+import { Icon, type IconName } from './icons';
 
-// 通用增益/减益图标（悬停或点按查看详情，兼容触屏）
-function StatusIcon({
+// 通用增益/减益蚀刻章（悬停或点按查看详情，兼容触屏）
+function StatusSeal({
   icon,
   value,
   name,
   description,
   tone,
 }: {
-  icon: string;
+  icon: IconName;
   value: number | string;
   name: string;
   description: string;
@@ -20,6 +21,7 @@ function StatusIcon({
 }) {
   const [showTip, setShowTip] = useState(false);
   const isBuff = tone === 'buff';
+  const accent = isBuff ? '#8fc77a' : '#e5736b';
 
   return (
     <div
@@ -32,13 +34,16 @@ function StatusIcon({
       }}
     >
       <div
-        className={`w-8 h-8 rounded-lg border flex items-center justify-center cursor-help shadow-lg ${
-          isBuff
-            ? 'bg-gradient-to-br from-green-600 to-green-800 border-green-400/50 shadow-green-900/30'
-            : 'bg-gradient-to-br from-rose-600 to-rose-900 border-rose-400/50 shadow-rose-900/30'
-        }`}
+        className="h-8 pl-1.5 pr-2 rounded-lg flex items-center gap-1 cursor-help"
+        style={{
+          background: `linear-gradient(180deg, ${accent}1f, ${accent}0d)`,
+          border: `1px solid ${accent}55`,
+          boxShadow: `0 2px 8px rgba(3,4,8,0.45), 0 0 8px ${accent}20`,
+          color: accent,
+        }}
       >
-        <span className="text-sm font-bold text-white text-shadow">{icon}{value}</span>
+        <Icon name={icon} size={13} strokeWidth={2.2} />
+        <span className="num text-[12px] font-black leading-none">{value}</span>
       </div>
 
       <AnimatePresence>
@@ -47,12 +52,11 @@ function StatusIcon({
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
-            className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 w-44 p-2 bg-gray-900/95 border rounded-lg shadow-xl z-50 ${
-              isBuff ? 'border-green-500/30' : 'border-rose-500/30'
-            }`}
+            className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-44 p-2.5 panel z-50"
+            style={{ borderColor: `${accent}44` }}
           >
-            <div className={`font-bold text-xs mb-1 text-shadow-sm ${isBuff ? 'text-green-400' : 'text-rose-400'}`}>{name}</div>
-            <div className="text-white/70 text-[10px] leading-relaxed text-shadow-sm">{description}</div>
+            <div className="font-bold text-xs mb-1" style={{ color: accent }}>{name}</div>
+            <div className="text-[10px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{description}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -72,12 +76,12 @@ export function BuffDisplay() {
   if (globalDamageBonus <= 0 && vulnerableStacks <= 0 && !weakened) return null;
 
   return (
-    <div className="flex flex-col items-center gap-1 mt-2">
-      <div className="text-white/40 text-[10px] text-shadow-sm">增益/减益</div>
-      <div className="flex items-center gap-2 flex-wrap justify-center">
+    <div className="flex flex-col items-start gap-1">
+      <div className="etch-label">状态</div>
+      <div className="flex items-center gap-1.5 flex-wrap">
         {globalDamageBonus > 0 && (
-          <StatusIcon
-            icon="+"
+          <StatusSeal
+            icon="plus"
             value={globalDamageBonus}
             name="全场强化"
             description={`所有动作牌基础数值 +${globalDamageBonus}`}
@@ -85,17 +89,17 @@ export function BuffDisplay() {
           />
         )}
         {vulnerableStacks > 0 && (
-          <StatusIcon
-            icon="💔"
-            value={`x${vulnerableStacks}`}
+          <StatusSeal
+            icon="target"
+            value={`×${vulnerableStacks}`}
             name={`破绽 (${vulnerableStacks} 层)`}
             description={`受到的攻击伤害 +${Math.round(STATUS.VULNERABLE_DAMAGE_AMP_PER_STACK * vulnerableStacks * 100)}%`}
             tone="debuff"
           />
         )}
         {weakened && (
-          <StatusIcon
-            icon="🌀"
+          <StatusSeal
+            icon="vortex"
             value="-25%"
             name="衰弱"
             description="本回合卡牌数值 -25%"

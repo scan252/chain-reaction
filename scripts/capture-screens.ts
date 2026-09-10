@@ -7,7 +7,7 @@ const OUT = 'docs/screenshots';
 mkdirSync(OUT, { recursive: true });
 
 async function main() {
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
@@ -72,9 +72,9 @@ async function main() {
   console.log('[flow] reject:', r5);
   await page.screenshot({ path: `${OUT}/05-map.png` });
 
-  // 吉祥物
+  // 星灵伙伴
   await page.evaluate(() => {
-    document.querySelector('img[alt="冒险伙伴"]')?.parentElement?.dispatchEvent(
+    document.querySelector('img[alt="星灵伙伴"]')?.dispatchEvent(
       new MouseEvent('click', { bubbles: true }));
   });
   await page.waitForTimeout(600);

@@ -6,6 +6,16 @@
 
 🎮 **在线试玩**: http://chain.yingzhu252.xyz
 
+## v3 视觉重构 ·「玄铁仪典」
+
+前端表现层整体重做，材质体系锁定「玄铁板甲 / 鎏金黄铜 / 秘能青焰」：
+
+- **全套 SVG 符文图标**：消灭 emoji 图标（⚔️💀🎁…），自绘 40+ 蚀刻线稿符文
+- **卡牌解剖学重设计**：名牌 + 稀有度宝石 + 秘能数值盘（符环/六边纹章）+ 关键词印记 + 类型缎带；稀有卡箔光扫过、锻造卡鎏金描边
+- **战斗舞台化**：敌人浮空台座 + 接触辉光、蚀刻刻度血条、意图铭牌；序列槽改为导轨插槽，执行时沿线传导能量脉冲
+- **程序化场景**：符文巨环、秘能微粒、鎏金雾霭、噪点颗粒与暗角全部由 CSS/SVG 生成，替代原 AI 粒子底图
+- **界面统一**：标题/创建/地图/奖励/商店/休息/结算共用同一套面板、按钮、蚀刻条与排版体系
+
 ## v2 版本亮点
 
 - **四大流派构筑**：连锁（排序滚雪球）· 共鸣（摆位互相加成）· 反击（完美格挡反伤）· 焚身（生命即资源）
@@ -13,6 +23,18 @@
 - **10 种敌人意图**（新增蓄力/蓄势/双重打击/增益/衰弱）、4 场维度设防精英战、3 只多阶段 Boss
 - **标准/精英双难度**、Monte-Carlo 平衡模拟器验证（`scripts/simulate.ts`）
 - **爽点层**：连击计数、伤害分级飘字、OVERDRIVE 过载特效、反击"反！"标记
+
+## 界面一览
+
+| 标题 | 地图 |
+|---|---|
+| ![title](./docs/screenshots/01-title.png) | ![map](./docs/screenshots/05-map.png) |
+
+| 战斗 | 结算 |
+|---|---|
+| ![battle](./docs/screenshots/08-battle-filled.png) | ![summary](./docs/screenshots/10-summary.png) |
+
+更多截图见 [docs/screenshots](./docs/screenshots/)（创建角色 / NPC 援助 / 奖励 / 商店 / 休息 / 终局 等 15 张）。
 
 ## 快速开始
 
@@ -41,10 +63,12 @@ React 19 · TypeScript · Vite · Tailwind CSS 4 · Zustand(Immer) · @dnd-kit �
 ## 工具脚本
 
 ```bash
-npx tsx scripts/simulate.ts 400   # 蒙特卡洛平衡模拟（胜率/流派/卡池抽查）
-npx tsx scripts/e2e-smoke.ts      # E2E 冒烟测试（需本地 dev 或设置 E2E_BASE_URL）
-npx tsx scripts/e2e-extended.ts   # E2E 扩展场景（商店/锻造/精英/难度）
-npx tsx scripts/capture-screens.ts # 截取关键界面截图
+npx tsx scripts/simulate.ts 400    # 蒙特卡洛平衡模拟（胜率/流派/卡池抽查）
+npx tsx scripts/e2e-smoke.ts       # E2E 冒烟测试（需本地 dev 或设置 E2E_BASE_URL）
+npx tsx scripts/e2e-extended.ts    # E2E 扩展场景（商店/锻造/精英/难度）
+npx tsx scripts/capture-screens.ts # 截取标题→战斗主流程截图
+npx tsx scripts/capture-scenes.ts  # 补拍 奖励/商店/休息/结算场景截图
+node scripts/optimize-shots.mjs docs/screenshots  # 截图压缩（PNG 调色板量化）
 npm run build                      # 生产构建（tsc + vite）
 ```
 
