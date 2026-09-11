@@ -224,11 +224,11 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
 
       {/* 中区：数值盘 + 描述 */}
       <div className="flex-1 flex flex-col items-center justify-center min-h-0 pt-1">
-        {/* 数值盘 */}
-        <div className="relative flex items-center justify-center shrink-0">
+        {/* 数值盘（容器撑到符环真实尺寸，避免下方描述压进圆环） */}
+        <div className={`relative flex items-center justify-center shrink-0 ${isModifier ? spec.medallionHex : spec.medallion}`}>
           {/* 符环 */}
           <svg
-            className={`${isModifier ? spec.medallionHex : spec.medallion} absolute`}
+            className="absolute inset-0 w-full h-full"
             viewBox="0 0 72 72"
             style={{ filter: `drop-shadow(0 0 8px ${card.color}55)` }}
           >
