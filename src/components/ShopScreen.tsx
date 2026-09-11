@@ -1,12 +1,8 @@
 import { motion } from 'framer-motion';
 import { useRunStore } from '../store/runStore';
 import { Card } from './Card';
-import type { CardInstance, CardTemplate } from '../types';
+import { Icon } from './icons';
 import { DECK } from '../config/balance';
-
-function toDisplayInstance(card: CardTemplate): CardInstance {
-  return { ...card, uuid: card.templateId };
-}
 
 export function ShopScreen() {
   const gold = useRunStore((s) => s.gold);
@@ -21,29 +17,58 @@ export function ShopScreen() {
   const canRemoveAny = gold >= removeCost && masterDeck.length > DECK.MIN_SIZE;
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-b from-[#0a0a1a] via-[#1a1520] to-[#0a0a1a] overflow-hidden">
+    <div className="scene scene-aurora vignette flex flex-col h-screen overflow-hidden">
       {/* 顶部 */}
-      <div className="text-center py-6 border-b border-white/10">
-        <h1 className="display-title text-3xl">驿 站 商 店</h1>
-        <p className="res-chip mt-2"><span className="text-[var(--gold-500)] text-[10px]">◆</span><span className="num text-[var(--gold-300)]">{gold}</span></p>
+      <div
+        className="relative z-10 text-center py-4"
+        style={{
+          background: 'linear-gradient(180deg, rgba(14,18,32,0.9), rgba(10,13,22,0.82))',
+          borderBottom: '1px solid var(--line)',
+        }}
+      >
+        <div className="flex items-center justify-center gap-3 mb-1.5">
+          <span className="hairline-gold w-14" />
+          <span className="section-label">WAYPOINT BAZAAR</span>
+          <span className="hairline-gold w-14" />
+        </div>
+        <h1 className="display-title text-3xl">驿站商店</h1>
+        <p className="res-chip mt-2.5" style={{ color: 'var(--brass-300)' }}>
+          <Icon name="coin" size={13} />
+          <span className="num text-[15px] font-black">{gold}</span>
+        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {/* 可购买卡牌 */}
-        <div className="section-label mb-4">— 购买卡牌 —</div>
-        <div className="flex flex-wrap gap-6 mb-8 justify-center">
-          {shopItems.map((item) => {
+      <div className="relative z-10 flex-1 overflow-y-auto px-6 py-5">
+        {/* 货架 */}
+        <div className="flex items-center justify-center gap-3 mb-5">
+          <span style={{ color: 'var(--brass-400)' }}><Icon name="shop" size={15} /></span>
+          <span className="section-label" style={{ fontSize: 11 }}>本 日 货 架</span>
+        </div>
+        <div className="flex flex-wrap gap-7 mb-10 justify-center">
+          {shopItems.map((item, i) => {
             const canAfford = gold >= item.cost && !!item.card;
             return (
               <motion.div
                 key={item.id}
-                whileHover={canAfford ? { y: -5, scale: 1.03 } : {}}
-                className={`relative ${!canAfford ? 'opacity-40' : 'cursor-pointer'}`}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                whileHover={canAfford ? { y: -7, scale: 1.04 } : {}}
+                className={`relative ${!canAfford ? 'opacity-35 saturate-50' : 'cursor-pointer'}`}
                 onClick={() => canAfford && buyCard(item.id)}
+                title={canAfford ? '点击购买' : '金币不足'}
               >
-                {item.card && <Card card={toDisplayInstance(item.card)} size="lg" />}
-                <div className={`text-center mt-2 text-base font-bold ${canAfford ? 'text-yellow-400' : 'text-gray-500'}`}>
-                  💰 {item.cost}
+                {item.card && <Card card={item.card} size="lg" />}
+                <div
+                  className="mx-auto mt-2.5 w-fit flex items-center gap-1.5 px-3 py-1 rounded-full num text-[13px] font-black"
+                  style={
+                    canAfford
+                      ? { color: 'var(--brass-300)', background: 'rgba(200,162,78,0.1)', border: '1px solid var(--line-brass-soft)' }
+                      : { color: 'var(--text-faint)', background: 'rgba(14,18,32,0.6)', border: '1px solid var(--line-soft)' }
+                  }
+                >
+                  <Icon name="coin" size={12} />
+                  {item.cost}
                 </div>
               </motion.div>
             );
@@ -51,47 +76,61 @@ export function ShopScreen() {
         </div>
 
         {/* 移除卡牌 */}
-        <div className="section-label mb-1">— 移除卡牌 —</div>
-        <div className="flex items-center gap-3 mb-1 text-sm">
-          <span className="text-[var(--gold-300)] num">◆ {removeCost}</span>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <span style={{ color: '#e5736b' }}><Icon name="trash" size={14} /></span>
+          <span className="section-label" style={{ fontSize: 11 }}>剔 除 卡 牌</span>
+          <span className="res-chip" style={{ color: 'var(--brass-300)', height: 24 }}>
+            <Icon name="coin" size={11} />
+            <span className="num">{removeCost}</span>
+          </span>
           {!canRemoveAny && (
-            <span className="text-[#e88a84] text-xs">
-              {gold < removeCost ? '(金币不足)' : `(卡组至少保留 ${DECK.MIN_SIZE} 张)`}
+            <span className="text-xs" style={{ color: '#e5736b' }}>
+              {gold < removeCost ? '（金币不足）' : `（卡组至少保留 ${DECK.MIN_SIZE} 张）`}
             </span>
           )}
         </div>
-        <p className="text-[var(--text-muted)] text-xs mb-3">每次删除后价格会上涨；点击要删除的卡</p>
-        <div className="flex flex-wrap gap-3 mb-6 justify-center">
-          {masterDeck.map((card, i) => {
-            const canRemove = canRemoveAny;
-            return (
-              <motion.div
-                key={`${card.templateId}-${i}`}
-                whileHover={canRemove ? { y: -4, scale: 1.05 } : {}}
-                className={`relative ${canRemove ? 'cursor-pointer hover:ring-2 hover:ring-red-500 rounded-lg' : 'opacity-40'}`}
-                onClick={() => canRemove && removeCard(i)}
-                title={card.description}
-              >
-                <Card card={toDisplayInstance(card)} size="sm" />
+        <p className="text-center text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+          每次剔除后价格会上涨 · 点击要剔除的卡
+        </p>
+        <div className="flex flex-wrap gap-2.5 mb-6 justify-center max-w-6xl mx-auto">
+          {masterDeck.map((card, i) => (
+            <motion.div
+              key={`${card.templateId}-${i}`}
+              whileHover={canRemoveAny ? { y: -4, scale: 1.05 } : {}}
+              className={`relative rounded-lg ${canRemoveAny ? 'cursor-pointer' : 'opacity-35 saturate-50'}`}
+              onClick={() => canRemoveAny && removeCard(i)}
+              title={canRemoveAny ? `剔除「${card.name}」` : card.description}
+            >
+              <Card card={card} size="sm" />
+              {canRemoveAny && (
                 <div
-                  className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 transition-opacity pointer-events-none"
-                  style={{ background: 'radial-gradient(circle, transparent 30%, rgba(239,68,68,0.35))' }}
-                />
-              </motion.div>
-            );
-          })}
+                  className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center"
+                  style={{ background: 'radial-gradient(circle, transparent 25%, rgba(209,83,75,0.4))' }}
+                >
+                  <span style={{ color: '#f2a29b' }}><Icon name="trash" size={22} /></span>
+                </div>
+              )}
+            </motion.div>
+          ))}
         </div>
       </div>
 
       {/* 离开 */}
-      <div className="text-center py-5 border-t border-white/10">
+      <div
+        className="relative z-10 text-center py-4"
+        style={{
+          background: 'linear-gradient(180deg, rgba(10,13,22,0.82), rgba(14,18,32,0.9))',
+          borderTop: '1px solid var(--line)',
+        }}
+      >
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
           onClick={leaveShop}
-          className="px-10 py-3 rounded-lg font-bold text-base bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg cursor-pointer"
+          className="btn btn-secondary btn-xl"
         >
           离开商店
+          <Icon name="arrow" size={16} strokeWidth={2.4} />
         </motion.button>
       </div>
     </div>

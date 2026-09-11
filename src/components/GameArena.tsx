@@ -20,16 +20,12 @@ import { RunHUD } from './RunHUD';
 import { Card } from './Card';
 import { RelicDisplay } from './RelicDisplay';
 import { BuffDisplay } from './BuffDisplay';
+import { Icon } from './icons';
 import type { CardInstance, PlayerClass } from '../types';
 
 const CLASS_NAMES: Record<PlayerClass, string> = {
   WARRIOR: '勇士',
   PRIEST: '牧师',
-};
-
-const CLASS_ICONS: Record<PlayerClass, string> = {
-  WARRIOR: '⚔️',
-  PRIEST: '✨',
 };
 
 const CLASS_IMAGES: Record<PlayerClass, string | undefined> = {
@@ -183,14 +179,14 @@ export function GameArena() {
   const handleUseSkill = () => {
     const ok = activateClassSkill();
     if (ok) {
-      showSkillFeedback('技能使用成功！');
+      showSkillFeedback('技能使用成功');
     } else {
       const reason = skillUsedThisBattle
         ? '本场战斗技能已用过'
         : playerProfile?.class === 'PRIEST' && playerHp >= playerMaxHp
           ? '生命值已满'
           : playerMp <= 0
-            ? 'MP不足'
+            ? '灵力不足'
             : '技能不可用';
       showSkillFeedback(reason, 'error');
     }
@@ -199,8 +195,8 @@ export function GameArena() {
 
   if (!battleReady) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-950 text-white/60">
-        正在进入战斗…
+      <div className="scene flex items-center justify-center h-screen">
+        <span className="etch-label" style={{ letterSpacing: '0.4em', color: 'var(--text-muted)' }}>正 在 进 入 战 斗 …</span>
       </div>
     );
   }
@@ -211,64 +207,84 @@ export function GameArena() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div
-        className="flex flex-col h-screen overflow-hidden relative"
-        style={{
-          backgroundImage: 'url(/pic/P4_opacity_65.webp)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
+      <div className="flex flex-col h-screen overflow-hidden relative bg-[#07090f]">
+        {/* ===== 场景底：符文地牢 + 调色 ===== */}
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: 'url(/pic/P4_opacity_65.webp)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 30%',
+          }}
+        />
+        {/* 调色层：压暗 + 玄铁蓝化 + 暗角 */}
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            background: `
+              radial-gradient(90% 62% at 50% 30%, transparent 40%, rgba(6,8,14,0.55) 100%),
+              linear-gradient(180deg, rgba(7,9,15,0.62) 0%, rgba(7,9,15,0.3) 30%, rgba(7,9,15,0.55) 68%, rgba(6,8,13,0.94) 100%)
+            `,
+          }}
+        />
+
         {/* 遗物显示 - 左上角 */}
         <RelicDisplay />
 
-        {/* 进度信息条 */}
-        <RunHUD />
+        {/* 顶栏 */}
+        <div className="relative z-30">
+          <RunHUD />
+        </div>
 
-        {/* 战斗飘字：锚定敌我位置 */}
+        {/* ===== 战斗飘字 ===== */}
         <AnimatePresence>
           {turnSummary && showExecutionSummary && turnSummary.totalDamage > 0 && (
             <motion.div
-              key={"dmg-" + turnSummary.totalDamage}
+              key={'dmg-' + turnSummary.totalDamage}
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1.05, y: -6 }}
               exit={{ opacity: 0, y: -18 }}
               transition={{ duration: 0.45, type: 'spring' }}
-              className="absolute right-[16%] top-[24%] z-20 pointer-events-none"
+              className="absolute right-[14%] top-[22%] z-20 pointer-events-none flex flex-col items-center"
             >
               <span
                 className="num font-black"
                 style={{
-                  fontSize: turnSummary.totalDamage >= 60 ? 44 : 34,
-                  color: turnSummary.totalDamage >= 60 ? '#f0b46a' : '#ece7da',
-                  textShadow: '0 2px 10px rgba(5,7,12,0.9)',
+                  fontSize: turnSummary.totalDamage >= 60 ? 46 : 34,
+                  color: turnSummary.totalDamage >= 60 ? '#f0c878' : '#ede8db',
+                  textShadow: '0 0 18px rgba(217,184,105,0.5), 0 2px 8px rgba(4,6,10,0.9)',
+                  letterSpacing: '-0.02em',
                 }}
               >
                 -{turnSummary.totalDamage}
               </span>
               {turnSummary.overdrive && (
-                <div className="text-[13px] font-black text-[var(--gold-300)] tracking-[0.25em] animate-pulse">⚡ 过载</div>
+                <span className="inline-flex items-center gap-1 text-[12px] font-black tracking-[0.3em] breathe" style={{ color: '#e6cc8b' }}>
+                  <Icon name="bolt" size={12} />过载
+                </span>
               )}
             </motion.div>
           )}
           {turnSummary && showExecutionSummary && turnSummary.hpLoss > 0 && (
             <motion.div
-              key={"hp-" + turnSummary.hpLoss}
+              key={'hp-' + turnSummary.hpLoss}
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1.05 }}
               exit={{ opacity: 0, y: 14 }}
               transition={{ duration: 0.45, type: 'spring' }}
-              className="absolute left-[16%] top-[46%] z-20 pointer-events-none"
+              className="absolute left-[14%] top-[44%] z-20 pointer-events-none"
             >
-              <span className="num font-black text-3xl text-[#e88a84]" style={{ textShadow: '0 2px 10px rgba(5,7,12,0.9)' }}>
+              <span
+                className="num font-black text-3xl"
+                style={{ color: '#e5736b', textShadow: '0 0 16px rgba(209,83,75,0.55), 0 2px 8px rgba(4,6,10,0.9)' }}
+              >
                 -{turnSummary.hpLoss}
               </span>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* 跳过动画按钮（结算动画期间显示） */}
+        {/* 跳过动画按钮 */}
         <AnimatePresence>
           {(phase === 'EXECUTE_PHASE1' || phase === 'EXECUTE_PHASE2') && (
             <motion.button
@@ -277,14 +293,15 @@ export function GameArena() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               onClick={requestSkip}
-              className="absolute top-12 right-3 z-30 btn btn-secondary" style={{ height: 28, fontSize: 12, padding: '0 14px' }}
+              className="btn btn-secondary btn-sm absolute top-14 right-4 z-30"
             >
-              跳过 ⏭
+              <Icon name="skip" size={12} />
+              跳过
             </motion.button>
           )}
         </AnimatePresence>
 
-        {/* 连击计数器（执行阶段显示） */}
+        {/* 连击计数牌 */}
         <AnimatePresence>
           {isExecuting && comboCount >= 2 && (
             <motion.div
@@ -292,72 +309,78 @@ export function GameArena() {
               initial={{ scale: 1.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className='absolute left-[20%] top-[18%] z-20 pointer-events-none bg-black/55 rounded-xl px-4 py-1.5 border border-[rgba(249,115,22,0.4)]'
+              className="absolute left-[18%] top-[16%] z-20 pointer-events-none flex items-center gap-2 rounded-xl px-4 py-2"
+              style={{
+                background: 'linear-gradient(180deg, rgba(20,14,6,0.88), rgba(10,8,4,0.88))',
+                border: '1px solid rgba(217,184,105,0.5)',
+                boxShadow: '0 4px 20px rgba(3,4,8,0.6), 0 0 20px rgba(217,184,105,0.25)',
+              }}
             >
+              <span style={{ color: '#e6cc8b' }}><Icon name="bolt" size={18} /></span>
               <span
-                className='font-black text-4xl'
+                className="num font-black text-3xl"
                 style={{
-                  color: comboCount >= 5 ? '#fcd34d' : '#f97316',
-                  textShadow: '0 0 20px currentColor, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+                  color: comboCount >= 5 ? '#f6dc9a' : '#d9b869',
+                  textShadow: '0 0 16px rgba(217,184,105,0.6), 0 2px 4px rgba(0,0,0,0.8)',
                 }}
               >
-                {comboCount} 连击!
+                {comboCount}
               </span>
+              <span className="text-[13px] font-bold tracking-[0.24em]" style={{ color: '#c8a24e' }}>连击</span>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* 过载特效 */}
+        {/* 过载闪光 */}
         <AnimatePresence>
           {overdriveFlash && (
             <motion.div
-              key='overdrive'
-              initial={{ opacity: 0.9, scale: 0.6 }}
-              animate={{ opacity: 0, scale: 1.6 }}
+              key="overdrive"
+              initial={{ opacity: 0.85 }}
+              animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.9 }}
-              className='absolute inset-0 z-40 pointer-events-none'
+              className="absolute inset-0 z-40 pointer-events-none"
               style={{
-                background: 'radial-gradient(circle at 50% 40%, rgba(250,204,21,0.55), transparent 55%)',
-                border: '4px solid rgba(250,204,21,0.7)',
-                borderRadius: '24px',
+                background: 'radial-gradient(circle at 50% 38%, rgba(240,200,120,0.5), transparent 55%)',
               }}
             />
           )}
         </AnimatePresence>
 
-        {/* 敌方区域（占据剩余空间） */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative">
+        {/* ===== 敌方舞台 ===== */}
+        <div className="flex-1 flex items-center justify-center min-h-0 relative z-10">
           <EnemyArea />
 
-          {/* 胜利/失败按钮 - 浮动在敌人区域下方 */}
+          {/* 胜利/失败按钮 */}
           <AnimatePresence>
             {(phase === 'VICTORY' || phase === 'DEFEAT') && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20"
               >
                 {phase === 'VICTORY' && (
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
                     onClick={handleVictory}
                     className="btn btn-primary btn-xl"
                   >
+                    <Icon name="gift" size={18} />
                     领取奖励
                   </motion.button>
                 )}
 
                 {phase === 'DEFEAT' && (
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
                     onClick={onBattleDefeat}
                     className="btn btn-secondary btn-xl"
                   >
-                    战败 - 查看结算
+                    战败 · 查看结算
                   </motion.button>
                 )}
               </motion.div>
@@ -365,10 +388,8 @@ export function GameArena() {
           </AnimatePresence>
         </div>
 
-        <div className="border-t border-white/5" />
-
-        {/* 执行序列区 */}
-        <div className="shrink-0">
+        {/* ===== 序列导轨 ===== */}
+        <div className="shrink-0 relative z-10 pb-1">
           <PipelineBoard
             selectedUuid={selectedCardUuid}
             onSlotClick={(slot) => {
@@ -382,100 +403,109 @@ export function GameArena() {
           />
         </div>
 
-        <div className="border-t border-white/5" />
-
-        {/* 底部区域：行动按钮 | 角色面板 | 手牌区 | 提示 */}
-        <div className="shrink-0 flex flex-col relative z-20">
-
-          {/* 角色面板 + 手牌 + 牌堆 */}
-          <div className="flex flex-col lg:flex-row items-center lg:items-end px-2 sm:px-4 pt-1 gap-1.5 lg:gap-4">
-            {/* 角色面板 */}
+        {/* ===== 底部：角色牌板 | 手牌 | 牌堆 ===== */}
+        <div
+          className="shrink-0 relative z-20"
+          style={{
+            background: 'linear-gradient(180deg, transparent 0%, rgba(6,8,13,0.72) 22%, rgba(5,6,11,0.92) 100%)',
+          }}
+        >
+          <div className="flex items-end px-4 gap-4">
+            {/* 角色牌板 */}
             <div
               ref={characterRef}
-              className="shrink-0 relative panel p-1.5 sm:p-2 flex items-center gap-2 sm:gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors w-full lg:w-auto"
+              className="shrink-0 relative panel corner-orn p-2.5 flex items-center gap-3 cursor-pointer transition-colors mb-2"
+              style={{ borderColor: showSkillButton ? 'var(--line-brass)' : undefined }}
               onClick={() => setShowSkillButton((v) => !v)}
               title={skillUsedThisBattle ? '职业技能已使用' : '点击使用职业技能'}
             >
-              {/* 头像 */}
-              <div className="w-10 h-12 sm:w-16 sm:h-20 rounded-md overflow-hidden border border-[var(--line-strong)] relative shrink-0">
+              {/* 肖像 */}
+              <div
+                className="w-[62px] h-[78px] rounded-lg overflow-hidden relative shrink-0"
+                style={{
+                  border: '1.5px solid var(--line-brass)',
+                  boxShadow: '0 4px 14px rgba(3,4,8,0.55), 0 0 12px rgba(200,162,78,0.15)',
+                }}
+              >
                 {playerProfile && CLASS_IMAGES[playerProfile.class] ? (
                   <img
                     src={CLASS_IMAGES[playerProfile.class]}
-                    alt={playerProfile.class === 'WARRIOR' ? '勇士' : '牧师'}
+                    alt={CLASS_NAMES[playerProfile.class]}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl bg-[var(--ink-700)]">
-                    {playerProfile ? CLASS_ICONS[playerProfile.class] : '⚔'}
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #232c47, #131829)', color: 'var(--brass-300)' }}>
+                    <Icon name="swords" size={26} />
                   </div>
                 )}
               </div>
 
-              {/* 名字 + 条 */}
-              <div className="flex flex-col gap-1.5 flex-1 sm:w-[168px] sm:flex-none">
+              {/* 名字 + 蚀刻条 */}
+              <div className="flex flex-col gap-[7px] w-[172px]">
                 {playerProfile && (
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[15px] font-bold text-[var(--text-primary)] leading-none">{playerProfile.name}</span>
-                    <span className="text-[11px] text-[var(--text-muted)] tracking-[0.25em]">{CLASS_NAMES[playerProfile.class]}</span>
+                    <span className="text-[15px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{playerProfile.name}</span>
+                    <span className="etch-label">{CLASS_NAMES[playerProfile.class]}</span>
                   </div>
                 )}
                 {/* 生命 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] w-6">生命</span>
-                  <div className="flex-1 h-[7px] rounded-sm bg-[var(--ink-900)] overflow-hidden border border-[var(--line)]">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-[#a83a34] to-[#d9564f]"
-                      animate={{ width: `${hpPercent}%` }}
-                    />
+                <div className="flex items-center gap-1.5">
+                  <span style={{ color: '#e5736b' }}><Icon name="heart" size={12} /></span>
+                  <div className="etch-bar flex-1">
+                    <motion.div className="fill fill-hp" animate={{ width: `${hpPercent}%` }} />
                   </div>
-                  <span className="num text-[11px] font-bold text-[#e88a84] w-14 text-right">{playerHp}<span className="text-[var(--text-muted)]">/{playerMaxHp}</span></span>
+                  <span className="num text-[11px] font-black w-[52px] text-right" style={{ color: '#f2a29b' }}>
+                    {playerHp}<span style={{ color: 'var(--text-muted)' }}>/{playerMaxHp}</span>
+                  </span>
                 </div>
                 {/* 灵力 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.3em] w-6">灵力</span>
-                  <div className="flex-1 h-[7px] rounded-sm bg-[var(--ink-900)] overflow-hidden border border-[var(--line)]">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-[#6f4fc0] to-[#9d7be0]"
-                      animate={{ width: `${mpPercent}%` }}
-                    />
+                <div className="flex items-center gap-1.5">
+                  <span style={{ color: 'var(--mana-400)' }}><Icon name="drop" size={12} /></span>
+                  <div className="etch-bar flex-1">
+                    <motion.div className="fill fill-mp" animate={{ width: `${mpPercent}%` }} />
                   </div>
-                  <span className="num text-[11px] font-bold text-[#b79ae8] w-14 text-right">{playerMp}<span className="text-[var(--text-muted)]">/{playerMaxMp}</span></span>
+                  <span className="num text-[11px] font-black w-[52px] text-right" style={{ color: 'var(--mana-300)' }}>
+                    {playerMp}<span style={{ color: 'var(--text-muted)' }}>/{playerMaxMp}</span>
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[var(--text-muted)] tracking-[0.2em] num">回合 {turnNumber}</span>
-                  {/* 职业技能按钮 */}
+                  <span className="etch-label num">回合 {turnNumber}</span>
+                  {/* 职业技能 */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       if (showSkillButton) { handleUseSkill(); } else { setShowSkillButton(true); }
                     }}
                     disabled={!canUseSkill}
-                    className={`text-[10px] px-2 py-0.5 rounded border tracking-[0.15em] transition-colors ${
+                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-md tracking-[0.12em] transition-colors"
+                    style={
                       canUseSkill
-                        ? 'text-[var(--gold-300)] border-[var(--line-strong)] hover:bg-[rgba(212,169,92,0.12)] cursor-pointer'
-                        : 'text-[var(--text-muted)] border-[var(--line)] cursor-not-allowed'
-                    }`}
+                        ? { color: 'var(--brass-300)', border: '1px solid var(--line-brass)', background: 'rgba(200,162,78,0.1)' }
+                        : { color: 'var(--text-faint)', border: '1px solid var(--line-soft)', cursor: 'not-allowed' }
+                    }
                   >
+                    <Icon name="sparkle" size={10} />
                     {playerProfile?.class === 'WARRIOR' ? '强化' : playerProfile?.class === 'PRIEST' ? '治疗' : '技能'}
-                    <span className="ml-1 opacity-70">-1灵力</span>
+                    <span style={{ opacity: 0.65 }}>-1灵力</span>
                   </button>
                 </div>
               </div>
 
-              {/* 职业技能确认浮层 */}
+              {/* 技能确认浮层 */}
               <AnimatePresence>
                 {showSkillButton && playerProfile && (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 6 }}
-                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-30 panel p-3 w-52"
+                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-30 panel panel-gold p-3.5 w-56"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="text-xs font-bold text-[var(--gold-300)] tracking-wider mb-1">
+                    <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider mb-1.5" style={{ color: 'var(--brass-300)' }}>
+                      <Icon name="sparkle" size={12} />
                       {playerProfile.class === 'WARRIOR' ? '职业技能 · 强化' : '职业技能 · 治疗'}
                     </div>
-                    <div className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
+                    <div className="text-[11px] leading-relaxed mb-2.5" style={{ color: 'var(--text-secondary)' }}>
                       {playerProfile.class === 'WARRIOR'
                         ? '将一张「强化」卡置入手牌：下一张牌效果 ×4（消耗）。'
                         : '回复 20 点生命值（消耗）。'}
@@ -483,31 +513,30 @@ export function GameArena() {
                     <button
                       onClick={handleUseSkill}
                       disabled={!canUseSkill}
-                      className={`btn w-full ${canUseSkill ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ height: 30, fontSize: 12 }}
+                      className={`btn btn-sm w-full ${canUseSkill ? 'btn-primary' : 'btn-secondary'}`}
                     >
-                      确 认 使 用
+                      确认使用
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Buff 显示（角色面板右侧） */}
-            <div className="pb-3">
+            {/* 状态印章 */}
+            <div className="pb-3 shrink-0">
               <BuffDisplay />
             </div>
 
-            {/* 中间：手牌区 */}
-            <div className="flex-1 min-w-0 px-2">
+            {/* 手牌 */}
+            <div className="flex-1 min-w-0">
               <HandArea
                 selectedUuid={selectedCardUuid}
                 onSelectCard={(uuid) => setSelectedCardUuid((cur) => (cur === uuid ? null : uuid))}
               />
             </div>
 
-            {/* 右侧：牌堆 */}
-            <div className="shrink-0 flex items-center gap-3 pb-1 lg:pb-0">
+            {/* 牌堆 */}
+            <div className="shrink-0 flex items-center gap-3 pb-2.5">
               <DeckPile onClick={() => setShowDeckModal(true)} />
               <DiscardPile onClick={() => setShowDiscardModal(true)} />
               {exhaustPile.length > 0 && (
@@ -515,11 +544,9 @@ export function GameArena() {
               )}
             </div>
           </div>
-
-
         </div>
 
-        {/* 技能使用提示 */}
+        {/* 技能提示 */}
         <AnimatePresence>
           {skillMessage && (
             <motion.div
@@ -527,10 +554,13 @@ export function GameArena() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className={`absolute bottom-32 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-white text-sm font-bold z-30 ${
-                skillMessageKind === 'success' ? 'bg-green-500/80' : 'bg-red-500/80'
-              }`}
+              className="absolute bottom-40 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold panel"
+              style={{
+                borderColor: skillMessageKind === 'success' ? 'rgba(143,199,122,0.5)' : 'rgba(229,115,107,0.5)',
+                color: skillMessageKind === 'success' ? '#a8d697' : '#f2a29b',
+              }}
             >
+              <Icon name={skillMessageKind === 'success' ? 'check' : 'x'} size={14} />
               {skillMessage}
             </motion.div>
           )}

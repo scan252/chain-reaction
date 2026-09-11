@@ -1,127 +1,244 @@
 @import "tailwindcss";
 
 /* ============================================================
-   《链式反应》设计系统 v2
-   基调：玄墨 · 鎏金 · 青灰 —— 克制、统一、有纸质感的暗色卡牌
+   《链式反应》设计系统 v3 ·「玄铁仪典」
+   材质：玄铁板甲 / 鎏金黄铜 / 秘能青焰
+   原则：90% 中性玄铁 + 10% 宝石色点缀；无 emoji，全 SVG 符文
    ============================================================ */
 
 :root {
-  /* 色彩令牌 */
-  --ink-900: #0a0d15;
-  --ink-800: #10141f;
-  --ink-700: #171d2b;
-  --ink-600: #1f2739;
-  --ink-500: #2a3450;
+  /* 玄铁（由深至浅） */
+  --ink-950: #06080e;
+  --ink-900: #0a0d16;
+  --ink-850: #0e1220;
+  --ink-800: #131829;
+  --ink-700: #1a2136;
+  --ink-600: #232c47;
+  --ink-500: #303b5e;
 
-  --gold-300: #f0d9a8;
-  --gold-400: #e3c07f;
-  --gold-500: #d4a95c;
-  --gold-600: #a97f3c;
+  /* 鎏金黄铜 */
+  --brass-100: #f8edd2;
+  --brass-200: #f0dfae;
+  --brass-300: #e6cc8b;
+  --brass-400: #d9b869;
+  --brass-500: #c8a24e;
+  --brass-600: #9d7c39;
+  --brass-700: #6d5527;
 
-  --text-primary: #ece7da;
-  --text-secondary: #a8b0c2;
-  --text-muted: #6b7488;
+  /* 秘能青焰 */
+  --arc-200: #a7f3e8;
+  --arc-300: #7decdc;
+  --arc-400: #4fdcc8;
+  --arc-500: #2bc2ae;
+  --arc-600: #189a8a;
 
-  --accent-teal: #6fc7cf;
-  --danger: #d9564f;
-  --life: #d9564f;
-  --mana: #9d7be0;
+  /* 功能色 */
+  --blood-300: #f2a29b;
+  --blood-400: #e5736b;
+  --blood-500: #d1534b;
+  --blood-600: #a63a34;
+  --ward-300: #a9c6e8;   /* 护盾蓝 */
+  --ward-400: #7ea6d8;
+  --mana-300: #c4a8ee;
+  --mana-400: #a87fe0;
+  --verd-400: #8fc77a;   /* 恢复绿 */
 
-  --line: rgba(160, 175, 210, 0.16);
-  --line-strong: rgba(212, 169, 92, 0.45);
+  --text-primary: #ede8db;
+  --text-secondary: #a9b1c5;
+  --text-muted: #67708a;
+  --text-faint: #454e66;
 
-  --radius: 10px;
+  --line: rgba(168, 182, 214, 0.14);
+  --line-soft: rgba(168, 182, 214, 0.08);
+  --line-brass: rgba(200, 162, 78, 0.42);
+  --line-brass-soft: rgba(200, 162, 78, 0.22);
+
+  --radius: 12px;
+  --radius-sm: 8px;
 
   --font-body: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Source Han Sans SC', system-ui, sans-serif;
 }
 
 @layer base {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html {
-    color-scheme: dark;
-  }
+  html { color-scheme: dark; }
 
   body {
     font-family: var(--font-body);
-    background: var(--ink-900);
+    background: var(--ink-950);
     color: var(--text-primary);
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  #root {
-    width: 100vw;
-    height: 100vh;
-  }
+  #root { width: 100vw; height: 100vh; }
 
-  ::selection {
-    background: rgba(212, 169, 92, 0.35);
-  }
+  ::selection { background: rgba(200, 162, 78, 0.35); }
 }
 
 /* ---------- 滚动条 ---------- */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(160, 175, 210, 0.2);
+  background: rgba(168, 182, 214, 0.18);
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(212, 169, 92, 0.4); }
+::-webkit-scrollbar-thumb:hover { background: rgba(200, 162, 78, 0.4); }
 
-/* ---------- 文字投影：柔和的单层阴影，替代黑描边 ---------- */
-.text-shadow {
-  text-shadow: 0 1px 3px rgba(5, 7, 12, 0.9), 0 0 14px rgba(5, 7, 12, 0.5);
-}
-.text-shadow-sm {
-  text-shadow: 0 1px 2px rgba(5, 7, 12, 0.85);
-}
-.text-shadow-heavy {
-  text-shadow: 0 2px 6px rgba(5, 7, 12, 0.95), 0 0 20px rgba(5, 7, 12, 0.6);
+/* ============================================================
+   场景底层：深空 + 雾霭 + 颗粒 + 暗角
+   ============================================================ */
+
+/* 通用场景底：深空渐变 + 顶部微光 + 底部压暗 */
+.scene {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(48, 59, 94, 0.5) 0%, transparent 55%),
+    radial-gradient(90% 70% at 50% 115%, rgba(24, 20, 40, 0.7) 0%, transparent 60%),
+    linear-gradient(180deg, #0b0e19 0%, #07090f 100%);
 }
 
-/* ---------- 标题排版 ---------- */
+/* 鎏金雾霭（标题/奖励等仪式感场景） */
+.scene-aurora::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 30% at 50% 30%, rgba(200, 162, 78, 0.12) 0%, transparent 70%),
+    radial-gradient(30% 22% at 22% 78%, rgba(43, 194, 174, 0.07) 0%, transparent 70%),
+    radial-gradient(30% 22% at 82% 74%, rgba(43, 194, 174, 0.05) 0%, transparent 70%);
+}
+
+/* 颗粒噪点（覆盖全场景，极轻） */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 暗角 */
+.vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(115% 100% at 50% 42%, transparent 55%, rgba(4, 5, 9, 0.55) 100%);
+}
+
+/* ============================================================
+   文字
+   ============================================================ */
+
+.text-shadow { text-shadow: 0 1px 3px rgba(4, 6, 10, 0.9), 0 0 14px rgba(4, 6, 10, 0.5); }
+.text-shadow-sm { text-shadow: 0 1px 2px rgba(4, 6, 10, 0.85); }
+.text-shadow-heavy { text-shadow: 0 2px 6px rgba(4, 6, 10, 0.95), 0 0 20px rgba(4, 6, 10, 0.6); }
+
+/* 鎏金箔字 */
 .display-title {
   font-weight: 900;
-  letter-spacing: 0.18em;
-  background: linear-gradient(180deg, #f7ecd4 0%, #e3c07f 55%, #a97f3c 100%);
+  letter-spacing: 0.16em;
+  background: linear-gradient(180deg, #faf0d8 0%, #ecd393 48%, #b08a3e 82%, #8a6a2e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 10px rgba(212, 169, 92, 0.25));
+  filter: drop-shadow(0 2px 12px rgba(200, 162, 78, 0.28));
 }
 
+/* 章节小标（宽字距大写） */
 .section-label {
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.38em;
   color: var(--text-muted);
   text-transform: uppercase;
 }
 
-/* ---------- 面板 ---------- */
+/* 蚀刻小标签 */
+.etch-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.num { font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   面板体系：玄铁板甲
+   ============================================================ */
+
 .panel {
-  background: linear-gradient(180deg, rgba(23, 29, 43, 0.92), rgba(16, 20, 31, 0.94));
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, transparent 18%),
+    linear-gradient(180deg, rgba(26, 33, 54, 0.94) 0%, rgba(14, 18, 32, 0.96) 100%);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 10px 34px rgba(4, 6, 12, 0.5);
-}
-.panel-gold {
-  border-color: var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 32px rgba(3, 4, 8, 0.55);
 }
 
-/* 金色细线分隔 */
+/* 鎏金描边面板 */
+.panel-gold { border-color: var(--line-brass); }
+
+/* 深井（内凹容器，如日志井、槽位井） */
+.well {
+  background:
+    linear-gradient(180deg, rgba(6, 8, 14, 0.75), rgba(10, 13, 22, 0.6));
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* 角饰：四角鎏金小楔（仪式感面板用） */
+.corner-orn { position: relative; }
+.corner-orn::before,
+.corner-orn::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.corner-orn::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--line-brass);
+  border-left: 2px solid var(--line-brass);
+  border-top-left-radius: var(--radius);
+}
+.corner-orn::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--line-brass);
+  border-right: 2px solid var(--line-brass);
+  border-bottom-right-radius: var(--radius);
+}
+
+/* 金色细分隔线 */
 .hairline-gold {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212, 169, 92, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(200, 162, 78, 0.55), transparent);
+}
+.hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168, 182, 214, 0.22), transparent);
 }
 
-/* ---------- 按钮 ---------- */
+/* ============================================================
+   按钮体系
+   ============================================================ */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -129,89 +246,206 @@
   gap: 8px;
   height: 42px;
   padding: 0 26px;
-  border-radius: 8px;
+  border-radius: 9px;
   font-weight: 700;
   font-size: 15px;
-  letter-spacing: 0.22em;
-  text-indent: 0.22em; /* 视觉居中补偿 */
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
   cursor: pointer;
   user-select: none;
   border: 1px solid transparent;
-  transition: filter 0.15s ease, transform 0.1s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: filter 0.15s ease, transform 0.1s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
 }
 .btn:active:not(:disabled) { transform: translateY(1px); }
-.btn:focus-visible { outline: 2px solid var(--gold-400); outline-offset: 2px; }
+.btn:focus-visible { outline: 2px solid var(--brass-400); outline-offset: 2px; }
 .btn:disabled {
   cursor: not-allowed;
-  filter: saturate(0.3) brightness(0.62);
+  filter: saturate(0.25) brightness(0.6);
   letter-spacing: 0.12em;
 }
 
+/* 鎏金主按钮 */
 .btn-primary {
-  color: #1c1508;
-  background: linear-gradient(180deg, #eed3a0 0%, #d4a95c 60%, #b8893f 100%);
-  border-color: rgba(255, 235, 200, 0.5);
-  box-shadow: 0 4px 18px rgba(212, 169, 92, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  color: #241a08;
+  background: linear-gradient(180deg, #f2ddab 0%, #d9b869 52%, #b08a3e 100%);
+  border-color: rgba(255, 238, 196, 0.55);
+  box-shadow:
+    0 4px 20px rgba(200, 162, 78, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(109, 85, 39, 0.4);
+  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.4);
 }
-.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.07);
+  box-shadow:
+    0 6px 26px rgba(200, 162, 78, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(109, 85, 39, 0.4);
+}
 
+/* 玄铁次按钮 */
 .btn-secondary {
   color: var(--text-primary);
-  background: rgba(42, 52, 80, 0.5);
+  background: linear-gradient(180deg, rgba(48, 59, 94, 0.55), rgba(35, 44, 71, 0.5));
   border-color: var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(52, 64, 96, 0.6);
-  border-color: rgba(160, 175, 210, 0.3);
+  background: linear-gradient(180deg, rgba(58, 71, 110, 0.6), rgba(42, 52, 82, 0.55));
+  border-color: rgba(168, 182, 214, 0.3);
 }
 
+/* 幽灵按钮 */
 .btn-ghost {
   color: var(--text-secondary);
   background: transparent;
   border-color: transparent;
   letter-spacing: 0.15em;
 }
-.btn-ghost:hover:not(:disabled) { color: var(--text-primary); background: rgba(160, 175, 210, 0.08); }
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(168, 182, 214, 0.08);
+}
 
+/* 血铜危险按钮（执行结算等） */
 .btn-danger {
-  color: #ffe9e6;
-  background: linear-gradient(180deg, #b04740 0%, #8f332e 100%);
-  border-color: rgba(255, 190, 180, 0.25);
+  color: #fdeae7;
+  background: linear-gradient(180deg, #c05a51 0%, #9c3c35 100%);
+  border-color: rgba(255, 196, 188, 0.3);
+  box-shadow:
+    0 4px 18px rgba(209, 83, 75, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  text-shadow: 0 1px 2px rgba(90, 20, 15, 0.6);
 }
 .btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
 
-/* 大号主行动按钮 */
-.btn-xl {
-  height: 52px;
-  font-size: 17px;
-  padding: 0 42px;
+/* 秘能青按钮 */
+.btn-arc {
+  color: #06231f;
+  background: linear-gradient(180deg, #8ff0df 0%, #3fc9b4 60%, #23a892 100%);
+  border-color: rgba(190, 255, 244, 0.5);
+  box-shadow:
+    0 4px 18px rgba(43, 194, 174, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
+.btn-arc:hover:not(:disabled) { filter: brightness(1.07); }
 
-/* ---------- 资源徽标（HUD 用，替代 emoji） ---------- */
+.btn-xl { height: 52px; font-size: 17px; padding: 0 44px; }
+.btn-sm { height: 32px; font-size: 13px; padding: 0 16px; letter-spacing: 0.14em; }
+
+/* ============================================================
+   资源徽标 / 筹码
+   ============================================================ */
+
 .res-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 6px;
-  background: rgba(16, 20, 31, 0.72);
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(19, 24, 41, 0.85), rgba(10, 13, 22, 0.85));
   border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 数值字体（等宽数字，血条/资源不跳动） ---------- */
-.num {
-  font-variant-numeric: tabular-nums;
+/* ============================================================
+   蚀刻进度条（HP/MP）
+   ============================================================ */
+
+.etch-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #05070c, #0a0d16);
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+.etch-bar > .fill {
+  height: 100%;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+}
+.etch-bar > .fill-hp { background: linear-gradient(180deg, #e5736b 0%, #b84a42 55%, #93332d 100%); }
+.etch-bar > .fill-mp { background: linear-gradient(180deg, #b28ee8 0%, #8f63d4 55%, #7148b4 100%); }
+.etch-bar > .fill-enemy { background: linear-gradient(180deg, #e5736b 0%, #c04a41 55%, #99352e 100%); }
+.etch-bar > .fill-arc { background: linear-gradient(180deg, #6fe8d6 0%, #2bc2ae 60%, #189a8a 100%); }
+
+/* 大型敌血条：带刻度 */
+.etch-bar-lg { height: 14px; border-radius: 7px; }
+.etch-bar-lg .ticks {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(4, 6, 10, 0.55) calc(10% - 1px), rgba(4, 6, 10, 0.55) 10%);
+  pointer-events: none;
 }
 
-/* ---------- 浮层弹窗基础 ---------- */
+/* ============================================================
+   浮层
+   ============================================================ */
+
 .overlay {
-  background: rgba(6, 8, 14, 0.72);
-  backdrop-filter: blur(6px);
+  background: rgba(5, 6, 11, 0.72);
+  backdrop-filter: blur(8px);
 }
+
+/* ============================================================
+   动效
+   ============================================================ */
+
+/* 稀有卡箔光扫过 */
+@keyframes foil-sweep {
+  0% { transform: translateX(-130%) skewX(-18deg); }
+  55%, 100% { transform: translateX(230%) skewX(-18deg); }
+}
+.foil-sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.foil-sheen::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(255, 250, 230, 0.16), transparent);
+  animation: foil-sweep 3.8s ease-in-out infinite;
+}
+
+/* 呼吸光晕 */
+@keyframes breathe-glow {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.breathe { animation: breathe-glow 2.6s ease-in-out infinite; }
+
+/* 缓浮 */
+@keyframes drift-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.drift { animation: drift-float 5s ease-in-out infinite; }
+
+/* 符文环慢转 */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.spin-slow { animation: spin-slow 90s linear infinite; }
+.spin-slower { animation: spin-slow 160s linear infinite reverse; }
+
+/* 可交互提示脉冲 */
+@keyframes beacon-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.12); }
+}
+.beacon { animation: beacon-pulse 1.8s ease-in-out infinite; }
 
 /* ---------- 卡牌通用悬停 ---------- */
 .card-hover {
