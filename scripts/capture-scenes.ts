@@ -50,7 +50,7 @@ async function enterMap(page: import('playwright').Page) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ channel: 'msedge', headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   page.on('pageerror', (e) => console.log('[pageerror]', String(e).slice(0, 300)));
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });

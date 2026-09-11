@@ -97,7 +97,7 @@ function SlotResultTag({ preview, compact }: { preview: SlotPreview; compact?: b
     <motion.div
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`absolute -bottom-[12px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center gap-1 rounded-md px-2 py-[2px] font-bold whitespace-nowrap pointer-events-none ${compact ? "text-[8px]" : "text-[10px]"}`}
+      className={`absolute -bottom-[26px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center gap-1 rounded-md px-2 py-[3px] font-bold whitespace-nowrap pointer-events-none ${compact ? "-bottom-[20px] text-[8px] px-1.5" : "text-[10px]"}`}
       style={
         fullyBlocked
           ? { color: '#a9c6e8', background: 'rgba(16,26,44,0.95)', border: '1px solid rgba(126,166,216,0.5)', boxShadow: '0 2px 8px rgba(3,4,8,0.5)' }
@@ -377,10 +377,9 @@ export function PipelineBoard({
       className="mx-auto w-fit max-w-full px-4"
       animate={shouldShake ? { x: [0, -8, 8, -6, 6, 0], transition: { duration: 0.45 } } : {}}
     >
-      <div className="panel relative px-5 pt-2.5 pb-2">
+      <div className="panel relative px-5 pt-6 pb-8">
         {/* 导轨装饰：槽位行上下各一条鎏金细轨 */}
         <div className="absolute left-6 right-6 top-[7px] h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,162,78,0.35), transparent)' }} />
-        <div className="absolute left-6 right-6 bottom-[7px] h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,162,78,0.35), transparent)' }} />
 
         {/* ===== 槽位行 ===== */}
         <div className="relative flex flex-wrap items-center justify-center gap-1 sm:gap-1">

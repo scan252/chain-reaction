@@ -75,6 +75,11 @@
 
   #root { width: 100vw; height: 100vh; }
 
+  input::placeholder {
+    color: rgba(122, 132, 158, 0.6);
+    font-weight: 500;
+  }
+
   ::selection { background: rgba(200, 162, 78, 0.35); }
 }
 

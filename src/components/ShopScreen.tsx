@@ -92,7 +92,7 @@ export function ShopScreen() {
         <p className="text-center text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
           每次剔除后价格会上涨 · 点击要剔除的卡
         </p>
-        <div className="flex flex-wrap gap-2.5 mb-6 justify-center max-w-6xl mx-auto">
+        <div className="flex flex-wrap gap-2 sm:gap-2.5 mb-6 justify-center max-w-6xl mx-auto">
           {masterDeck.map((card, i) => (
             <motion.div
               key={`${card.templateId}-${i}`}

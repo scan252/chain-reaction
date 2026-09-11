@@ -37,7 +37,8 @@ export function GameEndScreen({ isVictory = true }: GameEndScreenProps) {
   };
 
   return (
-    <div className={`scene vignette grain flex flex-col items-center justify-center min-h-screen px-4 py-8 overflow-y-auto ${isVictory ? 'scene-aurora' : ''}`}>
+    <div className={`scene vignette grain flex flex-col min-h-screen px-4 py-10 overflow-y-auto ${isVictory ? 'scene-aurora' : ''}`}>
+      <div className="my-auto flex flex-col items-center w-full pb-20">
       {/* 标题 */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -159,10 +160,11 @@ export function GameEndScreen({ isVictory = true }: GameEndScreenProps) {
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
         onClick={handleRestart}
-        className={`relative z-10 btn btn-xl ${isVictory ? 'btn-primary' : 'btn-secondary'}`}
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-30 btn btn-xl shadow-2xl ${isVictory ? 'btn-primary' : 'btn-secondary'}`}
       >
         {isVictory ? '再次冒险' : '重新开始'}
       </motion.button>
+      </div>
     </div>
   );
 }
