@@ -234,7 +234,7 @@ export function MapScreen() {
         {/* 地图容器 */}
         <div className="flex-1 flex justify-center items-start overflow-y-auto relative">
           {/* 吉祥物区域 - 放在地图左侧偏中间位置 */}
-          <div className="absolute left-2 sm:left-8 md:left-16 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+          <div className="absolute left-1 top-1/2 -translate-y-1/2 scale-[0.55] -translate-x-[30%] sm:scale-100 sm:translate-x-0 sm:left-8 md:left-16 z-10 flex flex-col items-center">
             <div
               className="relative cursor-pointer group"
               onClick={handleMascotClick}

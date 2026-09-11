@@ -21,8 +21,8 @@ export function RunHUD() {
         <span className="text-[var(--text-muted)] text-xs tracking-[0.3em]">远征</span>
       </div>
 
-      {/* 中：槽位（战斗核心资源，居中强调） */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+      {/* 中：槽位（战斗核心资源，居中强调；小屏隐藏） */}
+      <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 items-center gap-1.5">
         {Array.from({ length: pipelineSlots }).map((_, i) => (
           <span key={i} className="w-2 h-2 rotate-45 bg-[var(--gold-500)]/80 shadow-[0_0_5px_rgba(212,169,92,0.5)]" />
         ))}

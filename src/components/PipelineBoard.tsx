@@ -3,6 +3,7 @@ import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { StatusEffectType } from '../types';
 import type { SlotPreview, SlotLink } from '../types';
 
@@ -88,13 +89,13 @@ function LightningLink({
 }
 
 // 受击预告：槽位底边的内嵌结果签（替代浮动的预览框）
-function SlotResultTag({ preview }: { preview: SlotPreview }) {
+function SlotResultTag({ preview, compact }: { preview: SlotPreview; compact?: boolean }) {
   const fullyBlocked = preview.hpLoss === 0;
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`absolute bottom-1 left-1 right-1 z-20 flex items-center justify-center gap-1 rounded-md py-[3px] text-[11px] font-bold pointer-events-none ${
+      className={`absolute bottom-0.5 left-0.5 right-0.5 z-20 flex items-center justify-center gap-1 rounded py-[1px] font-bold pointer-events-none ${compact ? "text-[8px]" : "text-[11px]"} ${
         fullyBlocked
           ? 'bg-[rgba(110,180,110,0.16)] text-[#9ed49e] border border-[rgba(110,180,110,0.4)]'
           : 'bg-[rgba(217,86,79,0.16)] text-[#e89a94] border border-[rgba(217,86,79,0.4)]'
@@ -115,28 +116,30 @@ function SlotResultTag({ preview }: { preview: SlotPreview }) {
 }
 
 // 敌方攻击预告：骑在槽位上边缘的小红签
-function SlotAttackIndicator({ slotIndex }: { slotIndex: number }) {
+function SlotAttackIndicator({ slotIndex, compact }: { slotIndex: number; compact?: boolean }) {
   const intent = useGameStore((s) => s.enemy.intent);
   const attack = intent.attacks.find((a) => a.slotIndex === slotIndex);
   if (!attack) return null;
 
   return (
     <div
-      className="absolute -top-[11px] left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#3a1210] border border-[rgba(217,86,79,0.7)] px-2 py-[2px] whitespace-nowrap shadow-md"
+      className={`absolute -top-[9px] left-1/2 -translate-x-1/2 z-30 flex items-center gap-0.5 rounded-full bg-[#3a1210] border border-[rgba(217,86,79,0.7)] px-1.5 py-[1px] whitespace-nowrap shadow-md ${compact ? "-top-[7px]" : ""}`}
       title={`敌人将攻击此槽位，伤害 ${attack.damage}`}
     >
-      <span className="text-[#e88a84] text-[10px] leading-none">⚔</span>
-      <span className="num text-[12px] font-black leading-none text-[#f0a49e]">{attack.damage}</span>
+      <span className={"text-[#e88a84] leading-none " + (compact ? "text-[8px]" : "text-[10px]")}>⚔</span>
+      <span className={"num font-black leading-none text-[#f0a49e] " + (compact ? "text-[10px]" : "text-[12px]")}>{attack.damage}</span>
     </div>
   );
 }
 
 function PipelineSlot({
   index,
+  compact,
   selectedUuid,
   onSlotClick,
 }: {
   index: number;
+  compact?: boolean;
   selectedUuid?: string | null;
   onSlotClick?: (slot: number) => void;
 }) {
@@ -180,7 +183,7 @@ function PipelineSlot({
       onClick={() => {
         if (phase === 'PLAY' && selectedUuid && !displayCard && !isLocked) onSlotClick?.(index);
       }}
-      className={`relative w-32 h-40 rounded-lg border flex items-center justify-center transition-colors ${
+      className={`relative ${compact ? "w-[58px] h-[80px]" : "w-32 h-40"} rounded-lg border flex items-center justify-center transition-colors ${
         isLocked
           ? 'border-[rgba(157,123,224,0.5)] bg-[rgba(157,123,224,0.08)]'
           : isPhase2Attack
@@ -195,20 +198,16 @@ function PipelineSlot({
                     ? 'border-[rgba(240,146,60,0.45)] bg-[rgba(240,146,60,0.05)]'
                     : isAttackTarget && phase === 'PLAY'
                       ? 'border-[rgba(217,86,79,0.45)] bg-[rgba(217,86,79,0.04)]'
-                      : isHighlighted
-                        ? 'border-[var(--gold-400)] ring-2 ring-[rgba(212,169,92,0.45)] bg-[rgba(212,169,92,0.08)]'
-                        : isPhase2Attack
-                        ? 'border-[rgba(217,86,79,0.9)] ring-2 ring-[rgba(217,86,79,0.45)] bg-[rgba(217,86,79,0.08)]'
-                        : selectedUuid && !displayCard
+                      : selectedUuid && !displayCard
                         ? 'border-[var(--gold-500)]/60 bg-[rgba(212,169,92,0.05)] animate-pulse'
                         : 'border-dashed border-[var(--line)] bg-white/[0.02]'
       }`}
     >
       {/* 敌方攻击预告：骑上边缘 */}
-      {isAttackTarget && phase === 'PLAY' && <SlotAttackIndicator slotIndex={index} />}
+      {isAttackTarget && phase === 'PLAY' && <SlotAttackIndicator slotIndex={index} compact={compact} />}
 
       {/* 预览结果签 */}
-      {preview && phase === 'PLAY' && !isLocked && <SlotResultTag preview={preview} />}
+      {preview && phase === 'PLAY' && !isLocked && <SlotResultTag preview={preview} compact={compact} />}
 
       {/* 锁定 */}
       {isLocked && (
@@ -254,7 +253,7 @@ function PipelineSlot({
               }}
               className="w-full h-full cursor-grab active:cursor-grabbing"
             >
-              <Card card={displayCard} isHighlighted={isHighlighted} damageBonus={globalDamageBonus} />
+              <Card card={displayCard} size={compact ? 'xs' : 'md'} isHighlighted={isHighlighted} damageBonus={globalDamageBonus} />
             </div>
           </motion.div>
         ) : !isLocked ? (
@@ -278,6 +277,7 @@ export function PipelineBoard({
   onExecute?: () => void;
   onNextTurn?: () => void;
 } = {}) {
+  const isMobile = useIsMobile();
   const phase = useGameStore((s) => s.phase);
   const executionLog = useGameStore((s) => s.executionLog);
   const showExecutionSummary = useGameStore((s) => s.showExecutionSummary);
@@ -307,15 +307,15 @@ export function PipelineBoard({
       className="mx-auto w-fit max-w-full px-4"
       animate={shouldShake ? { x: [0, -8, 8, -6, 6, 0], transition: { duration: 0.45 } } : {}}
     >
-      <div className="panel relative px-5 pt-4 pb-3">
+      <div className="panel relative px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 max-w-full">
         {/* ===== 槽位行 ===== */}
-        <div className="relative flex items-center justify-center gap-2.5">
+        <div className="relative flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
           {Array.from({ length: pipelineSlots }).map((_, i) => (
             <div key={i} className="flex items-center">
-              <PipelineSlot index={i} selectedUuid={selectedUuid} onSlotClick={onSlotClick} />
+              <PipelineSlot index={i} compact={isMobile} selectedUuid={selectedUuid} onSlotClick={onSlotClick} />
               {i < pipelineSlots - 1 && (
                 <motion.span
-                  className="mx-1 text-[13px] text-[var(--text-muted)]"
+                  className="hidden sm:inline mx-1 text-[13px] text-[var(--text-muted)]"
                   animate={phase === 'EXECUTE_PHASE1' ? { color: ['#4a5468', '#d4a95c', '#4a5468'] } : {}}
                   transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.14 }}
                 >
@@ -330,8 +330,8 @@ export function PipelineBoard({
             <button
               onClick={onExecute}
               disabled={!hasCards}
-              className={`btn btn-danger ml-5 shrink-0 ${hasCards ? '' : 'btn-secondary'}`}
-              style={{ height: 48, letterSpacing: '0.3em', textIndent: '0.3em' }}
+              className={`btn btn-danger w-full sm:w-auto sm:ml-5 mt-2 sm:mt-0 ${hasCards ? '' : 'btn-secondary'}`}
+              style={{ height: isMobile ? 40 : 48, letterSpacing: '0.3em', textIndent: '0.3em' }}
             >
               执行结算
             </button>
@@ -348,7 +348,7 @@ export function PipelineBoard({
         {/* ===== 日志 / 结算区 ===== */}
         <div className="mt-3 border-t border-[var(--line)] pt-2">
           {/* 日志主体：固定高度，逐行，自动滚底 */}
-          <div ref={logRef} className="h-[72px] overflow-y-auto pr-1 flex flex-col gap-[3px]">
+          <div ref={logRef} className="h-[56px] sm:h-[72px] overflow-y-auto pr-1 flex flex-col gap-[3px]">
             {executionLog.length === 0 && !isExecuting && !showSummary && (
               <div className="text-[12px] text-[var(--text-muted)] tracking-[0.12em] py-1">
                 {phase === 'PLAY'
@@ -379,7 +379,7 @@ export function PipelineBoard({
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between gap-4 flex-wrap"
+                className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between gap-2 sm:gap-4 flex-wrap"
               >
                 <div className="flex items-center gap-4 flex-wrap text-[13px]">
                   <span className="text-[var(--text-secondary)]">

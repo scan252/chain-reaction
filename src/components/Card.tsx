@@ -5,7 +5,7 @@ interface CardProps {
   card: CardInstance;
   isHighlighted?: boolean;
   isDragging?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   onClick?: () => void;
   damageBonus?: number;
 }
@@ -36,16 +36,60 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
   const archetype = ARCHETYPE_META[card.archetype ?? ('GENERIC' as Archetype)];
   const badges = keywordBadges(card);
 
-  const sizeClasses = size === 'sm'
-    ? 'w-24 h-32 text-sm'
-    : size === 'lg'
-      ? 'w-40 h-56 text-lg'
-      : 'w-32 h-44 text-base';
+  const sizeClasses = size === 'xs'
+    ? 'w-14 h-20'
+    : size === 'sm'
+      ? 'w-24 h-32'
+      : size === 'lg'
+        ? 'w-40 h-56'
+        : 'w-32 h-40';
 
   const displayValue = !isModifier && damageBonus > 0
     ? `${card.baseValue + damageBonus}`
     : getDisplayValue(card);
 
+  /* ---------- xs：序列槽迷你形态（手机端），只保留数值与名字 ---------- */
+  if (size === 'xs') {
+    return (
+      <motion.div
+        layout
+        animate={{
+          scale: isDragging ? 1.08 : 1,
+          opacity: isDragging ? 0.8 : 1,
+          boxShadow: isHighlighted
+            ? `0 0 14px ${card.color}, 0 0 24px ${card.color}50`
+            : '0 1px 5px rgba(0,0,0,0.35)',
+        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        onClick={onClick}
+        className="w-14 h-20 relative flex flex-col rounded-lg select-none overflow-hidden border"
+        style={{
+          borderColor: isHighlighted ? '#facc15' : card.upgraded ? '#fbbf24' : rarity.color,
+          background: isModifier
+            ? 'linear-gradient(to bottom, #4c1d95e6, #2e1065e6)'
+            : 'linear-gradient(to bottom, #1e293be6, #0f172ae6)',
+        }}
+      >
+        <div className="h-1 w-full shrink-0" style={{ backgroundColor: card.color }} />
+        <div className="flex-1 flex flex-col items-center justify-center gap-0.5 px-0.5">
+          <div className="font-black leading-none text-base" style={{ color: card.color }}>
+            {displayValue}
+          </div>
+          <div className="text-white/90 font-medium leading-none text-[9px] w-full text-center truncate">
+            {card.name}
+          </div>
+        </div>
+        <div
+          className="text-[7px] text-center py-[1px] font-medium"
+          style={{ backgroundColor: `${card.color}30`, color: card.color }}
+        >
+          {isModifier ? '修饰' : '动作'}
+        </div>
+      </motion.div>
+    );
+  }
+
+  /* ---------- 常规形态 ---------- */
   return (
     <motion.div
       layout
@@ -73,15 +117,12 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
           : 'linear-gradient(to bottom, #1e293be6, #0f172ae6)',
       }}
     >
-      {/* 顶部色条（稀有度色） */}
-      <div
-        className="h-1.5 w-full shrink-0"
-        style={{ backgroundColor: card.color }}
-      />
+      {/* 顶部色条 */}
+      <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: card.color }} />
 
       {/* 稀有度标记（右上角） */}
       <div
-        className="absolute top-2 right-1 text-[9px] font-bold rounded-full px-1.5 py-0.5 leading-none"
+        className="absolute top-1.5 right-1 text-[9px] font-bold rounded-full px-1.5 py-0.5 leading-none"
         style={{ backgroundColor: `${rarity.color}30`, color: rarity.color, border: `1px solid ${rarity.color}80` }}
       >
         {rarity.label}
@@ -90,7 +131,7 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
       {/* 流派图标（左上角） */}
       {card.archetype && card.archetype !== 'GENERIC' && (
         <div
-          className="absolute top-2 left-1 text-[11px] w-5 h-5 flex items-center justify-center rounded-full font-bold"
+          className="absolute top-1.5 left-1 text-[11px] w-5 h-5 flex items-center justify-center rounded-full font-bold"
           style={{ backgroundColor: `${archetype.color}30`, color: archetype.color }}
           title={archetype.label}
         >
@@ -100,29 +141,27 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
 
       {/* 全局伤害加成（左上角下方） */}
       {!isModifier && damageBonus > 0 && (
-        <div className={`absolute ${card.archetype && card.archetype !== 'GENERIC' ? 'top-8' : 'top-2'} left-1 text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center bg-green-500/80 text-white border border-green-400/50`}>
+        <div className={`absolute ${card.archetype && card.archetype !== 'GENERIC' ? 'top-8' : 'top-1.5'} left-1 text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center bg-green-500/80 text-white border border-green-400/50`}>
           +{damageBonus}
         </div>
       )}
 
       {/* 卡牌内容 */}
       <div className="flex-1 flex flex-col items-center justify-center gap-1 px-1.5 py-1">
-        {/* 数值 */}
         <div
-          className={`font-bold leading-none ${size === 'lg' ? 'text-4xl' : 'text-2xl'}`}
+          className={`font-bold leading-none ${size === 'lg' ? 'text-4xl' : size === 'sm' ? 'text-xl' : 'text-2xl'}`}
           style={{ color: card.color }}
         >
           {displayValue}
         </div>
 
-        {/* 名称 */}
         <div className={`text-white font-medium text-center leading-tight truncate w-full ${size === 'lg' ? 'text-lg' : ''}`}>
           {card.name}
         </div>
 
-        {/* 描述 */}
-        <div className={`text-white/50 text-center leading-tight overflow-hidden ${size === 'lg' ? 'text-xs' : 'text-[9px]'}`}
-          style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
+        <div
+          className={`text-white/50 text-center leading-tight overflow-hidden ${size === 'lg' ? 'text-xs' : 'text-[9px]'}`}
+          style={{ display: '-webkit-box', WebkitLineClamp: size === 'sm' ? 2 : 3, WebkitBoxOrient: 'vertical' }}
         >
           {card.description}
         </div>

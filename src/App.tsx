@@ -48,9 +48,9 @@ function TitleScreen({ onCreateCharacter }: TitleScreenProps) {
           <span className="hairline-gold w-16" />
         </div>
 
-        <h1 className="display-title text-8xl leading-none">链式反应</h1>
+        <h1 className="display-title text-6xl sm:text-8xl leading-none">链式反应</h1>
 
-        <p className="mt-7 text-[14px] tracking-[0.55em] text-[var(--text-secondary)] pl-[0.55em]">
+        <p className="mt-5 sm:mt-7 text-[12px] sm:text-[14px] tracking-[0.4em] sm:tracking-[0.55em] text-[var(--text-secondary)] pl-[0.4em] sm:pl-[0.55em]">
           排兵布阵 · 连锁制敌
         </p>
       </motion.div>

@@ -388,16 +388,16 @@ export function GameArena() {
         <div className="shrink-0 flex flex-col relative z-20">
 
           {/* 角色面板 + 手牌 + 牌堆 */}
-          <div className="flex items-end px-4 pt-1 gap-4">
+          <div className="flex flex-col lg:flex-row items-center lg:items-end px-2 sm:px-4 pt-1 gap-1.5 lg:gap-4">
             {/* 角色面板 */}
             <div
               ref={characterRef}
-              className="shrink-0 relative panel p-2 flex items-center gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors"
+              className="shrink-0 relative panel p-1.5 sm:p-2 flex items-center gap-2 sm:gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors w-full lg:w-auto"
               onClick={() => setShowSkillButton((v) => !v)}
               title={skillUsedThisBattle ? '职业技能已使用' : '点击使用职业技能'}
             >
               {/* 头像 */}
-              <div className="w-16 h-20 rounded-md overflow-hidden border border-[var(--line-strong)] relative shrink-0">
+              <div className="w-10 h-12 sm:w-16 sm:h-20 rounded-md overflow-hidden border border-[var(--line-strong)] relative shrink-0">
                 {playerProfile && CLASS_IMAGES[playerProfile.class] ? (
                   <img
                     src={CLASS_IMAGES[playerProfile.class]}
@@ -412,7 +412,7 @@ export function GameArena() {
               </div>
 
               {/* 名字 + 条 */}
-              <div className="flex flex-col gap-1.5 w-[168px]">
+              <div className="flex flex-col gap-1.5 flex-1 sm:w-[168px] sm:flex-none">
                 {playerProfile && (
                   <div className="flex items-baseline gap-2">
                     <span className="text-[15px] font-bold text-[var(--text-primary)] leading-none">{playerProfile.name}</span>
@@ -507,7 +507,7 @@ export function GameArena() {
             </div>
 
             {/* 右侧：牌堆 */}
-            <div className="shrink-0 flex items-center gap-3 pb-2">
+            <div className="shrink-0 flex items-center gap-3 pb-1 lg:pb-0">
               <DeckPile onClick={() => setShowDeckModal(true)} />
               <DiscardPile onClick={() => setShowDiscardModal(true)} />
               {exhaustPile.length > 0 && (
