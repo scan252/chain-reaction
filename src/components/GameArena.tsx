@@ -410,11 +410,11 @@ export function GameArena() {
             background: 'linear-gradient(180deg, transparent 0%, rgba(6,8,13,0.72) 22%, rgba(5,6,11,0.92) 100%)',
           }}
         >
-          <div className="flex items-end px-4 gap-4">
+          <div className="flex flex-col lg:flex-row items-center lg:items-end px-2 sm:px-4 gap-1.5 lg:gap-4">
             {/* 角色牌板 */}
             <div
               ref={characterRef}
-              className="shrink-0 relative panel corner-orn p-2.5 flex items-center gap-3 cursor-pointer transition-colors mb-2"
+              className="shrink-0 relative panel corner-orn p-1.5 sm:p-2.5 flex items-center gap-2 sm:gap-3 cursor-pointer transition-colors lg:mb-2 w-full lg:w-auto"
               style={{ borderColor: showSkillButton ? 'var(--line-brass)' : undefined }}
               onClick={() => setShowSkillButton((v) => !v)}
               title={skillUsedThisBattle ? '职业技能已使用' : '点击使用职业技能'}

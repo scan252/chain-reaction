@@ -6,6 +6,7 @@ import { Card } from './Card';
 import { Icon } from './icons';
 import { StatusEffectType } from '../types';
 import type { SlotPreview, SlotLink } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // --- 链能连线层：按实际 DOM 位置绘制 ---
 function LightningLinkLayer({ links }: { links: SlotLink[] }) {
@@ -90,13 +91,13 @@ function LightningLink({
 }
 
 // 受击预告：骑在槽位下边缘的迷你结果章（与上方攻击牌呼应，不遮卡牌）
-function SlotResultTag({ preview }: { preview: SlotPreview }) {
+function SlotResultTag({ preview, compact }: { preview: SlotPreview; compact?: boolean }) {
   const fullyBlocked = preview.hpLoss === 0;
   return (
     <motion.div
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      className="absolute -bottom-[12px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center gap-1 rounded-md px-2 py-[2px] text-[10px] font-bold whitespace-nowrap pointer-events-none"
+      className={`absolute -bottom-[12px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center gap-1 rounded-md px-2 py-[2px] font-bold whitespace-nowrap pointer-events-none ${compact ? "text-[8px]" : "text-[10px]"}`}
       style={
         fullyBlocked
           ? { color: '#a9c6e8', background: 'rgba(16,26,44,0.95)', border: '1px solid rgba(126,166,216,0.5)', boxShadow: '0 2px 8px rgba(3,4,8,0.5)' }
@@ -118,7 +119,7 @@ function SlotResultTag({ preview }: { preview: SlotPreview }) {
 }
 
 // 敌方攻击预告：骑在槽位上边缘的血铜小牌
-function SlotAttackIndicator({ slotIndex }: { slotIndex: number }) {
+function SlotAttackIndicator({ slotIndex, compact }: { slotIndex: number; compact?: boolean }) {
   const intent = useGameStore((s) => s.enemy.intent);
   const attack = intent.attacks.find((a) => a.slotIndex === slotIndex);
   if (!attack) return null;
@@ -133,18 +134,20 @@ function SlotAttackIndicator({ slotIndex }: { slotIndex: number }) {
       }}
       title={`敌人将攻击此槽位，伤害 ${attack.damage}`}
     >
-      <span className="text-[#e5736b]"><Icon name="sword" size={10} strokeWidth={2.2} /></span>
-      <span className="num text-[12px] font-black leading-none text-[#f2a29b]">{attack.damage}</span>
+      <span className="text-[#e5736b]"><Icon name="sword" size={compact ? 8 : 10} strokeWidth={2.2} /></span>
+      <span className={`num font-black leading-none text-[#f2a29b] ${compact ? 'text-[10px]' : 'text-[12px]'}`}>{attack.damage}</span>
     </div>
   );
 }
 
 function PipelineSlot({
   index,
+  compact,
   selectedUuid,
   onSlotClick,
 }: {
   index: number;
+  compact?: boolean;
   selectedUuid?: string | null;
   onSlotClick?: (slot: number) => void;
 }) {
@@ -156,7 +159,6 @@ function PipelineSlot({
   const slotStatus = useGameStore((s) => s.slotStatuses[index]);
   const slotPreviews = useGameStore((s) => s.slotPreviews);
   const intent = useGameStore((s) => s.enemy.intent);
-  const globalDamageBonus = useGameStore((s) => s.globalDamageBonus);
 
   const displayCard = card ?? (phase === 'EXECUTE_PHASE3' ? pipelineSnapshot?.[index] ?? null : null);
 
@@ -251,14 +253,14 @@ function PipelineSlot({
       onClick={() => {
         if (phase === 'PLAY' && selectedUuid && !displayCard && !isLocked) onSlotClick?.(index);
       }}
-      className="relative w-28 h-40 rounded-[10px] flex items-center justify-center transition-all duration-200"
+      className={`relative ${compact ? 'w-14 h-20 rounded-md' : 'w-28 h-40 rounded-[10px]'} flex items-center justify-center transition-all duration-200`}
       style={wellStyle}
     >
       {/* 敌方攻击预告 */}
-      {isAttackTarget && phase === 'PLAY' && <SlotAttackIndicator slotIndex={index} />}
+      {isAttackTarget && phase === 'PLAY' && <SlotAttackIndicator slotIndex={index} compact={compact} />}
 
       {/* 预览结果签 */}
-      {preview && phase === 'PLAY' && !isLocked && <SlotResultTag preview={preview} />}
+      {preview && phase === 'PLAY' && !isLocked && <SlotResultTag preview={preview} compact={compact} />}
 
       {/* 锁定 */}
       {isLocked && (
@@ -304,7 +306,7 @@ function PipelineSlot({
               }}
               className="w-full h-full cursor-grab active:cursor-grabbing"
             >
-              <Card card={displayCard} isHighlighted={isExecuting} damageBonus={globalDamageBonus} />
+              <Card card={displayCard} size={compact ? 'xs' : 'md'} />
             </div>
           </motion.div>
         ) : !isLocked ? (
@@ -354,6 +356,7 @@ export function PipelineBoard({
   const slotLinks = useGameStore((s) => s.slotLinks);
   const pipeline = useGameStore((s) => s.pipeline);
 
+  const isMobile = useIsMobile();
   const logRef = useRef<HTMLDivElement>(null);
   const hasCards = pipeline.some((c) => c !== null);
 
@@ -380,11 +383,15 @@ export function PipelineBoard({
         <div className="absolute left-6 right-6 bottom-[7px] h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,162,78,0.35), transparent)' }} />
 
         {/* ===== 槽位行 ===== */}
-        <div className="relative flex items-center justify-center gap-1">
+        <div className="relative flex flex-wrap items-center justify-center gap-1 sm:gap-1">
           {Array.from({ length: pipelineSlots }).map((_, i) => (
             <div key={i} className="flex items-center">
-              <PipelineSlot index={i} selectedUuid={selectedUuid} onSlotClick={onSlotClick} />
-              {i < pipelineSlots - 1 && <FlowChevron active={phase === 'EXECUTE_PHASE1'} delay={i * 0.14} />}
+              <PipelineSlot index={i} compact={isMobile} selectedUuid={selectedUuid} onSlotClick={onSlotClick} />
+              {i < pipelineSlots - 1 && (
+                <span className="hidden sm:flex items-center">
+                  <FlowChevron active={phase === 'EXECUTE_PHASE1'} delay={i * 0.14} />
+                </span>
+              )}
             </div>
           ))}
 
@@ -393,8 +400,8 @@ export function PipelineBoard({
             <motion.button
               onClick={onExecute}
               disabled={!hasCards}
-              className={`btn ml-4 shrink-0 ${hasCards ? 'btn-danger' : 'btn-secondary'}`}
-              style={{ height: 52, letterSpacing: '0.28em', textIndent: '0.28em', fontSize: 16 }}
+              className={`btn w-full sm:w-auto sm:ml-4 mt-2 sm:mt-0 ${hasCards ? 'btn-danger' : 'btn-secondary'}`}
+              style={{ height: isMobile ? 42 : 52, letterSpacing: '0.28em', textIndent: '0.28em', fontSize: isMobile ? 14 : 16 }}
               whileHover={hasCards ? { scale: 1.03 } : undefined}
               whileTap={hasCards ? { scale: 0.97 } : undefined}
             >

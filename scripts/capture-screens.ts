@@ -7,7 +7,7 @@ const OUT = 'docs/screenshots';
 mkdirSync(OUT, { recursive: true });
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ channel: 'msedge', headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });

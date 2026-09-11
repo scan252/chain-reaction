@@ -7,7 +7,7 @@ interface CardProps {
   card: CardTemplate & { uuid?: string };
   isHighlighted?: boolean;
   isDragging?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   onClick?: () => void;
   damageBonus?: number;
 }
@@ -49,6 +49,25 @@ function getDisplayValue(card: CardTemplate): string {
 
 /** 尺寸规格表 */
 const SIZE_SPEC = {
+  xs: {
+    frame: 'w-14 h-20 rounded-md',
+    name: 'text-[8px] px-0.5 h-[13px]',
+    gemSize: 7,
+    medallion: 'w-7 h-7',
+    medallionHex: 'w-8 h-7',
+    value: 'text-[13px]',
+    iconSize: 13,
+    desc: 'hidden',
+    pips: 'gap-[2px] bottom-[12px]',
+    pip: 'text-[6.5px] px-[2px] py-[0.5px]',
+    pipIcon: 6,
+    ribbon: 'text-[6px] h-[10px] gap-[1px]',
+    ribbonIcon: 6,
+    archIcon: 8,
+    archBox: 'top-[2px] left-[2px]',
+    gemBox: 'top-[2px] right-[2px]',
+    ring: 12,
+  },
   sm: {
     frame: 'w-20 h-[112px] rounded-lg',
     name: 'text-[8.5px] px-1 h-[15px]',
@@ -189,11 +208,11 @@ export function Card({ card, isHighlighted, isDragging, size = 'md', onClick, da
         <div
           className="absolute z-10 flex items-center justify-center rounded-full font-black"
           style={{
-            top: spec === SIZE_SPEC.sm ? 14 : size === 'lg' ? 30 : 24,
+            top: spec === SIZE_SPEC.xs ? 10 : spec === SIZE_SPEC.sm ? 14 : size === 'lg' ? 30 : 24,
             left: 4,
-            width: size === 'sm' ? 14 : 18,
-            height: size === 'sm' ? 14 : 18,
-            fontSize: size === 'sm' ? 8 : 10,
+            width: size === 'xs' || size === 'sm' ? 14 : 18,
+            height: size === 'xs' || size === 'sm' ? 14 : 18,
+            fontSize: size === 'xs' || size === 'sm' ? 8 : 10,
             color: '#a7f3c8',
             background: 'rgba(38, 153, 102, 0.25)',
             border: '1px solid rgba(94, 224, 158, 0.55)',

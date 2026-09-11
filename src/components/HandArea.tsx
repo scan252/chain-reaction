@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import type { CardInstance } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface HandAreaProps {
   selectedUuid?: string | null;
@@ -29,6 +30,7 @@ function DraggableCard({
   selected: boolean;
   onSelect?: (uuid: string) => void;
 }) {
+  const isMobile = useIsMobile();
   const phase = useGameStore((s) => s.phase);
   const globalDamageBonus = useGameStore((s) => s.globalDamageBonus);
 
@@ -68,13 +70,13 @@ function DraggableCard({
       transition={{ type: 'spring', stiffness: 280, damping: 26, delay: index * 0.025 }}
       whileHover={{ y: selected ? -20 : -22, rotate: 0, zIndex: 60 }}
       onClick={() => onSelect?.(card.uuid)}
-      className="cursor-grab active:cursor-grabbing shrink-0"
+      className="cursor-grab active:cursor-grabbing shrink-0 touch-none"
     >
       <div
         className={selected ? 'rounded-[10px]' : undefined}
         style={selected ? { boxShadow: '0 0 0 2px #e6cc8b, 0 0 22px rgba(217,184,105,0.55)' } : undefined}
       >
-        <Card card={card} isDragging={isDragging} damageBonus={globalDamageBonus} />
+        <Card card={card} size={isMobile ? 'xs' : 'md'} isDragging={isDragging} damageBonus={globalDamageBonus} />
       </div>
     </motion.div>
   );
@@ -97,10 +99,14 @@ export function HandArea({ selectedUuid, onSelectCard }: HandAreaProps) {
     return () => ro.disconnect();
   }, []);
 
+  const isMobile = useIsMobile();
+  const cardW = isMobile ? 56 : CARD_W;
+  const cardH = isMobile ? 80 : CARD_H;
+  const minVisible = isMobile ? 24 : MIN_VISIBLE;
   const n = hand.length;
-  const natural = n * CARD_W;
+  const natural = n * cardW;
   const overlap = n > 1 && natural > availWidth
-    ? Math.min((natural - availWidth) / (n - 1), CARD_W - MIN_VISIBLE)
+    ? Math.min((natural - availWidth) / (n - 1), cardW - minVisible)
     : 0;
 
   // 扇形弧度最大下沉量，容器需预留，防止边缘卡牌被视口裁掉
@@ -110,7 +116,7 @@ export function HandArea({ selectedUuid, onSelectCard }: HandAreaProps) {
     <div ref={containerRef} className="w-full flex flex-col items-center justify-end">
       <div
         className="flex items-start justify-center w-full"
-        style={{ height: CARD_H + 12 + Math.ceil(arcMax), paddingTop: 12 }}
+        style={{ height: cardH + 12 + Math.ceil(arcMax), paddingTop: 12 }}
       >
         <AnimatePresence mode="popLayout">
           {hand.map((card, i) => (

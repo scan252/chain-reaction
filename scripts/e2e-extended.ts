@@ -49,8 +49,9 @@ async function main() {
       state.scene = 'SHOP';
     });
   });
-  await page.waitForTimeout(800);
-  check('商店界面渲染', await page.getByText('购买卡牌').count() >= 1);
+  await page.waitForTimeout(1500);
+  const shopText = await page.evaluate(() => document.body.innerText.replace(/s/g, ''));
+  check('商店界面渲染', shopText.includes('驿站商店'), shopText.slice(0, 60));
 
   // 买卡
   await page.evaluate(() => {

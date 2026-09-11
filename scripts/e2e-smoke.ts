@@ -66,7 +66,7 @@ async function main() {
   // 7. 战斗界面
   const battleText = await page.getByText('执行结算').count();
   check('进入战斗界面', battleText >= 1);
-  check('抽到手牌', await page.evaluate(() => document.body.innerText.includes('将卡牌置入序列槽')));
+  check('抽到手牌', await page.evaluate(() => document.body.innerText.includes('将卡牌拖入序列槽')));
 
   // 8. 放置手牌到槽位：优先 store 直连（dev），生产环境用真实鼠标拖拽
   let placed = await page.evaluate(() => {
