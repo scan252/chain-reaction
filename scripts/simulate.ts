@@ -87,7 +87,8 @@ function smartPlacement(hand: CardInstance[], slots: number, intent: EnemyIntent
   const mods = hand.filter((c) => c.type === 'MODIFIER');
   const mulMods = mods.filter(isMulMod).sort((a, b) => b.baseValue - a.baseValue);
   const otherMods = mods.filter((m) => !isMulMod(m));
-  const burns = hand.filter((c) => c.burnCost && playerHp > 25).sort((a, b) => b.baseValue - a.baseValue);
+  // 焚身策略：真实玩家会配给式使用（每回合至多 2 张、保留血线缓冲），而非全押
+  const burns = hand.filter((c) => c.burnCost && playerHp > 30).sort((a, b) => b.baseValue - a.baseValue).slice(0, 2);
 
   const put = (c: CardInstance, slot?: number) => {
     if (freeSlots.length === 0) return false;
@@ -301,8 +302,8 @@ export function simulateBattle(
     vulnerableStacks += combat.newVulnerableStacks;
 
     // 受身/黄金钟/共鸣转化（与 gameStore 数值同步）
-    if (combat.riposteGuardHits > 0) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 3 * combat.riposteGuardHits);
-    if (combat.perfectBlockTrigger) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 5);
+    if (combat.riposteGuardHits > 0) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 2 * combat.riposteGuardHits);
+    if (combat.perfectBlockTrigger) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 4);
     if (combat.resonanceTrigger) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 1);
 
     // 总伤害
@@ -366,11 +367,10 @@ export function simulateBattle(
 // ---------- 流派卡组构造（模拟成长中的成型卡组） ----------
 
 export function archetypeDeck(archetype: Archetype, extraCards: number): CardTemplate[] {
-  // 模拟定向构筑玩家：删掉部分初始白板，专注流派选卡
+  // 模拟定向构筑玩家：删掉部分初始白板（v3.4 初始 9 张：删 2 石弹 + 1 木盾），专注流派选卡
   const deck = buildStarterDeck();
-  // 删 4 小石弹 + 2 木盾
-  for (let i = 0; i < 4; i++) { const idx = deck.findIndex((c) => c.templateId === 'atk_stone'); if (idx >= 0) deck.splice(idx, 1); }
-  for (let i = 0; i < 2; i++) { const idx = deck.findIndex((c) => c.templateId === 'def_wood'); if (idx >= 0) deck.splice(idx, 1); }
+  for (let i = 0; i < 2; i++) { const idx = deck.findIndex((c) => c.templateId === 'atk_stone'); if (idx >= 0) deck.splice(idx, 1); }
+  { const idx = deck.findIndex((c) => c.templateId === 'def_wood'); if (idx >= 0) deck.splice(idx, 1); }
   const pool = ALL_CARD_POOL.filter((c) => c.archetype === archetype);
   for (let i = 0; i < extraCards; i++) {
     const rarityRoll = Math.random();

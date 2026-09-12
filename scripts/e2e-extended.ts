@@ -62,7 +62,7 @@ async function main() {
     return s.masterDeck.length > before;
   });
   const deckAfterBuy = await page.evaluate(() => (window as unknown as { __runStore: { getState: () => { masterDeck: unknown[] } } }).__runStore.getState().masterDeck.length);
-  check('购买卡牌成功', deckAfterBuy > 12, `deck=${deckAfterBuy}`);
+  check('购买卡牌成功', deckAfterBuy > 9, `deck=${deckAfterBuy}`);
 
   // 删卡价格递增验证
   const costs: number[] = [];

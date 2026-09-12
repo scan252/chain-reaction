@@ -62,23 +62,23 @@ const RESONANCE_CARDS: CardTemplate[] = [
 // ---------- 反击流（7） ----------
 const RIPOSTE_CARDS: CardTemplate[] = [
   card({ templateId: 'ri_thorn', name: '荆棘甲', type: CardType.ACTION, baseValue: 8, effectId: 'GAIN_ARMOR', riposte: 12, description: '8 护盾 反击12：本槽被攻击且未掉血时，附加 12 伤害', color: '#fb923c', archetype: Archetype.RIPOSTE }),
-  card({ templateId: 'ri_wall', name: '受身', type: CardType.ACTION, baseValue: 8, effectId: 'RIPOSTE_GUARD', description: '8 护盾；本槽每被攻击一次，全场动作牌本场 +3', color: '#94a3b8', archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_wall', name: '受身', type: CardType.ACTION, baseValue: 8, effectId: 'RIPOSTE_GUARD', description: '8 护盾；本槽每被攻击一次，全场动作牌本场 +2', color: '#94a3b8', archetype: Archetype.RIPOSTE }),
   card({ templateId: 'ri_mirror', name: '镜面反射', type: CardType.ACTION, baseValue: 14, effectId: 'MIRROR_REFLECT', description: '14 护盾；本槽完全格挡时，反弹等量盾值的伤害', color: '#f87171', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
   card({ templateId: 'ri_shift', name: '斗转星移', type: CardType.ACTION, baseValue: 5, effectId: 'PHASE_SHIFT', description: '5 伤害；本槽被攻击时，伤害转移至左侧槽位', color: '#c084fc', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
-  card({ templateId: 'ri_gladiator', name: '角斗士', type: CardType.MODIFIER, baseValue: 5, effectId: 'GLADIATOR', description: '本回合每有 1 个槽位将被攻击，总伤害 +5', color: '#fca5a5', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_gladiator', name: '角斗士', type: CardType.MODIFIER, baseValue: 4, effectId: 'GLADIATOR', description: '本回合每有 1 个槽位将被攻击，总伤害 +4', color: '#fca5a5', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
   card({ templateId: 'ri_revenge', name: '复仇誓言', type: CardType.MODIFIER, baseValue: 4, effectId: 'REVENGE_VOW', description: '本场每失去 10 HP，下一张攻击 +4', color: '#ef4444', rarity: Rarity.UNCOMMON, archetype: Archetype.RIPOSTE }),
-  card({ templateId: 'ri_bell', name: '黄金钟', type: CardType.ACTION, baseValue: 10, effectId: 'GOLDEN_BELL', description: '10 护盾；本回合任意槽完全格挡时，全场动作牌本场 +5（可叠加）', color: '#fcd34d', rarity: Rarity.RARE, archetype: Archetype.RIPOSTE }),
+  card({ templateId: 'ri_bell', name: '黄金钟', type: CardType.ACTION, baseValue: 10, effectId: 'GOLDEN_BELL', description: '10 护盾；本回合任意槽完全格挡时，全场动作牌本场 +4（可叠加）', color: '#fcd34d', rarity: Rarity.RARE, archetype: Archetype.RIPOSTE }),
 ];
 
 // ---------- 焚身流（7） ----------
 const BURN_CARDS: CardTemplate[] = [
-  card({ templateId: 'bu_price', name: '血偿', type: CardType.ACTION, baseValue: 26, effectId: 'BLOOD_PRICE', burnCost: 3, description: '焚身3：26 伤害（本场首次打出付 3 HP，重复打出效果 ×0.7）', color: '#dc2626', archetype: Archetype.BURN }),
+  card({ templateId: 'bu_price', name: '血偿', type: CardType.ACTION, baseValue: 28, effectId: 'BLOOD_PRICE', burnCost: 3, description: '焚身3：28 伤害（本场首次打出付 3 HP，重复打出效果 ×0.7）', color: '#dc2626', archetype: Archetype.BURN }),
   card({ templateId: 'bu_ward', name: '燃烧意志', type: CardType.ACTION, baseValue: 15, effectId: 'BURN_WARD', burnCost: 2, description: '焚身2：15 护盾（本场首次打出失去 2 HP）', color: '#b91c1c', archetype: Archetype.BURN }),
   card({ templateId: 'bu_rage', name: '血怒', type: CardType.MODIFIER, baseValue: 4, effectId: 'BLOOD_RAGE', description: '本回合每有一张焚身卡，全场动作牌本场 +4', color: '#ea580c', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
   card({ templateId: 'bu_scorch', name: '焦土', type: CardType.ACTION, baseValue: 15, effectId: 'SCORCH', description: '15 伤害；点燃此槽 3 回合（该槽数值 +100%）', color: '#f97316', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
   card({ templateId: 'bu_deadly', name: '亡命', type: CardType.MODIFIER, baseValue: 0, effectId: 'DEADLY', description: '若 HP ≤ 50%，本回合后续攻击 ×1.5', color: '#7f1d1d', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
   card({ templateId: 'bu_sacrifice', name: '献祭', type: CardType.ACTION, baseValue: 5, effectId: 'SACRIFICE', burnCost: 4, description: '焚身4：全场动作牌本场 +5（首次打出付 4 HP，重复只加不扣）', color: '#991b1b', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
-  card({ templateId: 'bu_phoenix', name: '不死鸟', type: CardType.ACTION, baseValue: 38, effectId: 'PHOENIX_STRIKE', burnCost: 6, description: '焚身6：38 伤害；HP≤10 时 55（首次打出失去 6 HP）', color: '#fbbf24', rarity: Rarity.RARE, archetype: Archetype.BURN }),
+  card({ templateId: 'bu_phoenix', name: '不死鸟', type: CardType.ACTION, baseValue: 40, effectId: 'PHOENIX_STRIKE', burnCost: 6, description: '焚身6：40 伤害；HP≤10 时 57（首次打出失去 6 HP）', color: '#fbbf24', rarity: Rarity.RARE, archetype: Archetype.BURN }),
 ];
 
 // ---------- 保留的特殊卡 ----------
@@ -131,7 +131,8 @@ function describeUpgraded(u: CardTemplate): string {
 }
 
 // ============================================================
-// 初始卡组：5 小石弹 + 5 木盾 + 2 X2
+// 初始卡组：4 小石弹 + 4 木盾 + 1 X2（v3.4：12→9 张，白板稀释收敛；
+// 抽牌 9 = 开局首回合即可看完整副牌，设计卡密度优先）
 // ============================================================
 
 export function buildStarterDeck(): CardTemplate[] {
@@ -139,9 +140,9 @@ export function buildStarterDeck(): CardTemplate[] {
   const stone = TEMPLATE_INDEX['atk_stone'];
   const wood = TEMPLATE_INDEX['def_wood'];
   const x2 = TEMPLATE_INDEX['mod_x2'];
-  for (let i = 0; i < 5; i++) deck.push({ ...stone });
-  for (let i = 0; i < 5; i++) deck.push({ ...wood });
-  for (let i = 0; i < 2; i++) deck.push({ ...x2 });
+  for (let i = 0; i < 4; i++) deck.push({ ...stone });
+  for (let i = 0; i < 4; i++) deck.push({ ...wood });
+  deck.push({ ...x2 });
   return deck;
 }
 
@@ -193,8 +194,8 @@ export function generateRewardCards(count = 3, opts?: { guaranteeRare?: boolean;
   for (let i = 0; i < count; i++) {
     const forceRare = opts?.guaranteeRare && i === 0;
     const rarity = forceRare ? Rarity.RARE : rollRarity(rareOdds);
-    // 前 2 个奖励位 50% 概率从主流派池抽取（供给定向）
-    if (biasArchetype && i < 2 && Math.random() < 0.5) {
+    // 前 2 个奖励位 65% 概率从主流派池抽取（v3.4：0.5→0.65，构筑更早聚焦）
+    if (biasArchetype && i < 2 && Math.random() < 0.65) {
       const archPool = ALL_CARD_POOL.filter((c) => c.archetype === biasArchetype && c.rarity === rarity);
       if (archPool.length > 0) {
         picks.push(...sampleFrom(archPool, 1));

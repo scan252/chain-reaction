@@ -734,12 +734,12 @@ export const useGameStore = create<GameState>()(
           state.executionLog.push(`反击 → 附加伤害 +${combatResult.riposteDamage}`);
         }
         if (combatResult.riposteGuardHits > 0) {
-          state.globalDamageBonus = grow(state.globalDamageBonus, 3 * combatResult.riposteGuardHits);
-          state.executionLog.push(`受身 → 被击 ${combatResult.riposteGuardHits} 次，全场动作牌本场 +${3 * combatResult.riposteGuardHits}`);
+          state.globalDamageBonus = grow(state.globalDamageBonus, 2 * combatResult.riposteGuardHits);
+          state.executionLog.push(`受身 → 被击 ${combatResult.riposteGuardHits} 次，全场动作牌本场 +${2 * combatResult.riposteGuardHits}`);
         }
         if (combatResult.perfectBlockTrigger) {
-          state.globalDamageBonus = grow(state.globalDamageBonus, 5);
-          state.executionLog.push('黄金钟 → 全场动作牌本场 +5');
+          state.globalDamageBonus = grow(state.globalDamageBonus, 4);
+          state.executionLog.push('黄金钟 → 全场动作牌本场 +4');
         }
         if (combatResult.resonanceTrigger) {
           state.globalDamageBonus = grow(state.globalDamageBonus, 1);

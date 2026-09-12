@@ -418,7 +418,7 @@ export const EffectRegistry: Record<string, EffectFunction> = {
     };
   },
 
-  // 不死鸟：焚身6：38 伤；HP≤10 时 55 伤
+  // 不死鸟：焚身6：40 伤；HP≤10 时 57 伤
   PHOENIX_STRIKE: (ctx, card, slotIndex) => {
     const paid = payBurn(ctx, card);
     const lowHp = ctx.playerHpCurrent > 0 && ctx.playerHpCurrent <= 10;
