@@ -1,5 +1,7 @@
 # 《链式反应》数值白皮书 v2.1（模拟器调优终稿）
 
+> **⚠️ v3「聚力」大修已上线，当前生效数值以 [BALANCE_v3.md](./BALANCE_v3.md) 为准**；本文保留为 v2.1 历史档案与预算模型方法论。
+
 > 版本：2026-09-09 · 状态：P3 重构完成，经蒙特卡洛模拟器 8 轮调优
 > 配套代码：`src/config/balance.ts`（单一数值源）· 模拟器：`scripts/simulate.ts`
 > 理论依据：[RESEARCH_NOTES.md](./RESEARCH_NOTES.md)

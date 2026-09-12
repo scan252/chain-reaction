@@ -22,6 +22,9 @@ import { PLAYER, PIPELINE, KEYWORD, STATUS } from '../src/config/balance';
 
 const RUNS = Number(process.argv[2] ?? 400);
 
+/** 回合伤害采样（校准爽点阈值用） */
+const TURN_DMG: number[] = [];
+
 // ---------- 工具 ----------
 let seedCounter = 0;
 function uuid(): string {
@@ -297,11 +300,14 @@ export function simulateBattle(
 
     vulnerableStacks += combat.newVulnerableStacks;
 
-    if (combat.perfectBlockTrigger) globalDamageBonus = Math.min(12, globalDamageBonus + 4);
-    if (combat.resonanceTrigger) globalDamageBonus = Math.min(12, globalDamageBonus + 1);
+    // 受身/黄金钟/共鸣转化（与 gameStore 数值同步）
+    if (combat.riposteGuardHits > 0) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 3 * combat.riposteGuardHits);
+    if (combat.perfectBlockTrigger) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 5);
+    if (combat.resonanceTrigger) globalDamageBonus = Math.min(KEYWORD.GLOBAL_GROWTH_CAP, globalDamageBonus + 1);
 
     // 总伤害
     const totalDmg = ctx.accumulatedDamage + combat.reflectDamageBonus + combat.riposteDamage;
+    TURN_DMG.push(totalDmg);
     let dmg = totalDmg;
     if (enemy.armor > 0) {
       const absorbed = Math.min(enemy.armor, dmg);
@@ -512,6 +518,16 @@ function main() {
   }
 
   // 流派强度对比（成型卡组 vs L4 敌人池 & Boss）
+  // 回合伤害分布（校准 JUICE 层）
+  console.log('===== 回合伤害分布（全体策略混合，校准爽点阈值用） =====');
+  if (TURN_DMG.length > 0) {
+    const s = [...TURN_DMG].sort((a, b) => a - b);
+    const q = (p: number) => s[Math.min(s.length - 1, Math.floor(p * s.length))];
+    const share = (t: number) => ((TURN_DMG.filter((d) => d >= t).length / TURN_DMG.length) * 100).toFixed(1) + '%';
+    console.log(`  样本 ${s.length} 回合 | p50 ${q(0.5)} | p75 ${q(0.75)} | p90 ${q(0.9)} | p99 ${q(0.99)} | 峰值 ${s[s.length - 1]}`);
+    console.log(`  达标率: ≥40 ${share(40)} | ≥60 ${share(60)} | ≥85 ${share(85)} | ≥130 ${share(130)} | ≥180 ${share(180)}`);
+  }
+
   console.log('===== 流派均衡性（成型卡组 15 张 vs 全程） =====');
   const archetypes: Archetype[] = ['CHAIN', 'RESONANCE', 'RIPOSTE', 'BURN'];
   const archWins: Record<string, number> = {};

@@ -52,7 +52,7 @@ function computeChainRepeats(card: CardInstance, ctx: ExecutionContext): number 
   return 1 + chain * ctx.chainAttackCount;
 }
 
-/** 焚身付费：每张卡每场战斗只付一次；重复打出时效果 ×0.6（防止免费白板化）。返回新数组避免修改冻结状态。 */
+/** 焚身付费：每张卡每场战斗只付一次；重复打出时效果 ×0.7（防止免费白板化）。返回新数组避免修改冻结状态。 */
 function payBurn(ctx: ExecutionContext, card: CardInstance): { cost: number; paidIds: string[] } {
   if (!card.burnCost) return { cost: 0, paidIds: ctx.paidBurnCardIds };
   const key = card.templateId + ':' + (card.uuid ?? '');
@@ -65,7 +65,7 @@ function payBurn(ctx: ExecutionContext, card: CardInstance): { cost: number; pai
 function burnRepeatMultiplier(ctx: ExecutionContext, card: CardInstance): number {
   if (!card.burnCost) return 1;
   const key = card.templateId + ':' + (card.uuid ?? '');
-  return ctx.paidBurnCardIds.includes(key) ? 0.6 : 1;
+  return ctx.paidBurnCardIds.includes(key) ? 0.7 : 1;
 }
 
 /** 单次触发的基础数值（含超导加成） */
@@ -418,11 +418,11 @@ export const EffectRegistry: Record<string, EffectFunction> = {
     };
   },
 
-  // 不死鸟：焚身8：30 伤；HP≤10 时 45 伤
+  // 不死鸟：焚身6：38 伤；HP≤10 时 55 伤
   PHOENIX_STRIKE: (ctx, card, slotIndex) => {
     const paid = payBurn(ctx, card);
     const lowHp = ctx.playerHpCurrent > 0 && ctx.playerHpCurrent <= 10;
-    const value = lowHp ? card.baseValue + 15 : card.baseValue;
+    const value = lowHp ? card.baseValue + 17 : card.baseValue;
     const repeats = ctx.nextCardRepeats * computeChainRepeats(card, ctx);
     const per = (value + ctx.globalDamageBonus + ctx.chainBonusPerTrigger) * ctx.nextCardMultiplier * burnRepeatMultiplier(ctx, card);
     const total = Math.floor((per * repeats + ctx.nextCardFlatBonus) * ctx.deadlyMultiplier);
@@ -493,7 +493,7 @@ export function executePipelineV2(
   // 共鸣卡与左右相邻同类卡互相 +bonus（×定位仪倍率；定位仪在场即生效，与位置无关）
   const resonanceMult = new Array(slots).fill(1);
   const tunerPresent = pipeline.some((c) => c?.effectId === 'RESONANCE_TUNER');
-  const rate = resonanceBonusRate * (tunerPresent ? 2.5 : 1);
+  const rate = resonanceBonusRate * (tunerPresent ? 2 : 1);
   for (let i = 0; i < slots; i++) {
     const card = pipeline[i];
     if (!card?.resonance) continue;

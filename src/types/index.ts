@@ -96,7 +96,7 @@ export const AttackPattern = {
   SPREADING_FLAME: 'SPREADING_FLAME',
   WEAK_POINT_SNIPE: 'WEAK_POINT_SNIPE',
   SPATIAL_LOCK: 'SPATIAL_LOCK',
-  CHARGE_UP: 'CHARGE_UP',       // 蓄力：本回合不动，下回合伤害×2.5
+  CHARGE_UP: 'CHARGE_UP',       // 蓄力：本回合不动，下回合伤害×KEYWORD.CHARGE_UP_MULTIPLIER
   FORTIFY: 'FORTIFY',           // 蓄势：自身获得护盾
   DOUBLE_STRIKE: 'DOUBLE_STRIKE', // 双重打击：攻击2个槽位
   ENRAGE: 'ENRAGE',             // 增益：自身攻击+BuffValue（本场）

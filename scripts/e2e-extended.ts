@@ -42,7 +42,7 @@ async function main() {
     w.__runStore!.setState((state) => {
       // 手动填商店
       const items = [
-        { id: 'shop-test-1', type: 'BUY_CARD', card: { templateId: 'atk_fire', name: '火球', type: 'ACTION', baseValue: 7, effectId: 'DEAL_DAMAGE', description: '', color: '#e74c3c', rarity: 'COMMON', archetype: 'GENERIC' }, cost: 50 },
+        { id: 'shop-test-1', type: 'BUY_CARD', card: { templateId: 'atk_fire', name: '火球', type: 'ACTION', baseValue: 9, effectId: 'DEAL_DAMAGE', description: '', color: '#e74c3c', rarity: 'COMMON', archetype: 'GENERIC' }, cost: 50 },
         { id: 'shop-test-remove', type: 'REMOVE_CARD', cost: 50 },
       ];
       state.shopItems = items;

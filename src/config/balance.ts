@@ -99,7 +99,7 @@ export const STATUS = {
 /** 关键词参数 */
 export const KEYWORD = {
   /** 全局成长类效果的单场封顶（防"体积即乘法"指数膨胀） */
-  GLOBAL_GROWTH_CAP: 12,
+  GLOBAL_GROWTH_CAP: 14,
   /** 共鸣：相邻同类互相加成比例 */
   RESONANCE_BONUS: 0.5,
   /** 永动链轮遗物的共鸣加成 */
@@ -113,10 +113,10 @@ export const KEYWORD = {
   RIPOSTE_ENGINE_MULTIPLIER: 1.5,
 } as const;
 
-/** 敌人难度系数 */
+/** 敌人难度系数（v3.2：方差收敛后用系数回填全局威胁度） */
 export const DIFFICULTY = {
-  NORMAL: { hpMul: 1, dmgMul: 1 },
-  ELITE: { hpMul: 1.15, dmgMul: 1.1 },
+  NORMAL: { hpMul: 1.12, dmgMul: 1.06 },
+  ELITE: { hpMul: 1.28, dmgMul: 1.16 },
 } as const;
 
 /** 升级（锻造） */
@@ -140,8 +140,8 @@ export const EASTER_EGG = {
 /** 爽点层 */
 export const JUICE = {
   /** 过载阈值：单回合总伤 ≥ max(此值, 上回合×2) 触发特效 */
-  OVERDRIVE_BASE: 50,
+  OVERDRIVE_BASE: 60,
   OVERDRIVE_RATIO: 2,
   /** 伤害飘字分级阈值 */
-  DAMAGE_TIERS: [30, 60, 100, 150] as const,
+  DAMAGE_TIERS: [40, 85, 130, 180] as const,
 } as const;
