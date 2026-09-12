@@ -76,7 +76,7 @@ const POOL_L4: EnemyTemplate[] = [
     maxHp: 96, baseDamage: 10, damageVariance: 3,
     attackPatterns: [
       { pattern: AttackPattern.SPATIAL_LOCK, weight: 40 },
-      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 35 },
+      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 35 },
       { pattern: AttackPattern.FORTIFY, buffValue: 14, weight: 25 },
     ],
   },
@@ -107,7 +107,7 @@ const POOL_L5: EnemyTemplate[] = [
     maxHp: 116, baseDamage: 10, damageVariance: 3,
     attackPatterns: [
       { pattern: AttackPattern.SPREADING_FLAME, weight: 45 },
-      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 40 },
+      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 40 },
       { pattern: AttackPattern.ENRAGE, buffValue: 4, weight: 15 },
     ],
   },
@@ -166,8 +166,8 @@ const BOSS_TEMPLATES: EnemyTemplate[] = [
     name: '远古巨龙', emoji: '🐉', image: '/pic/monster/b1.webp',
     maxHp: 206, baseDamage: 12, damageVariance: 3,
     attackPatterns: [
-      { pattern: AttackPattern.SINGLE, weight: 35 },
-      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 2, weight: 35 },
+      { pattern: AttackPattern.SINGLE, weight: 30 },
+      { pattern: AttackPattern.AREA_SWEEP, slotSpan: 3, weight: 40 },
       { pattern: AttackPattern.CHARGE_UP, buffValue: KEYWORD.CHARGE_UP_MULTIPLIER, weight: 30 },
     ],
     phase2Patterns: [

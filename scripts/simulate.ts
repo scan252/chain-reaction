@@ -429,7 +429,7 @@ function simulateRun(strategy: Strategy, difficulty: Difficulty): RunOutcome {
         const [rc] = generateRewardCards(1);
         deck.push({ ...rc.card });
       } else if (roll < 0.67) {
-        playerHp = Math.min(PLAYER.MAX_HP, playerHp + Math.floor(PLAYER.MAX_HP * 0.3));
+        playerHp = Math.min(PLAYER.MAX_HP, playerHp + Math.floor(PLAYER.MAX_HP * 0.25));
       }
       hpCurve.push(playerHp);
       continue;
@@ -442,18 +442,17 @@ function simulateRun(strategy: Strategy, difficulty: Difficulty): RunOutcome {
 
     if (node.type === 'ELITE') {
       eliteHpLoss.push(result.hpLoss);
-      // 精英战后篝火：回复 15% 最大HP
+      // 精英战后篝火：回复 25% 最大HP（与 runStore 一致）
       playerHp = Math.min(PLAYER.MAX_HP, playerHp + Math.floor(PLAYER.MAX_HP * 0.25));
-      // 精英奖励：2张卡（保底1稀有）
+      // 精英奖励：2 轮三选一（保底 1 稀有/轮），与 runStore 一致
       const r1 = generateRewardCards(3, { guaranteeRare: true, deckBias: deck });
-      const r2 = generateRewardCards(3, { deckBias: deck });
+      const r2 = generateRewardCards(3, { guaranteeRare: true, deckBias: deck });
       deck.push({ ...pick(r1).card });
-      if (Math.random() < 0.7) deck.push({ ...pick(r2).card });
+      deck.push({ ...pick(r2).card });
     } else if (node.type === 'BATTLE') {
-      // 普通奖励：平均2张卡
+      // 普通奖励：v3.3 起与真实游戏一致 —— 1 轮三选一（精英 2 轮）
       const r = generateRewardCards(3, { deckBias: deck });
       deck.push({ ...pick(r).card });
-      if (Math.random() < 1.0) deck.push({ ...pick(generateRewardCards(3, { deckBias: deck })).card });
     } else if (node.type === 'BOSS') {
       bossTurns = result.turns;
     }
@@ -564,8 +563,10 @@ function simulateRunArch(arch: Archetype, difficulty: Difficulty): boolean {
     }
     if (node.type === 'SHOP' || node.type === 'REWARD') {
       if (Math.random() < 0.5) {
+        // 30% 混入全池（真实玩家会混编通用卡，纯流派池低估防御需求）
         const pool = ALL_CARD_POOL.filter((c) => c.archetype === arch);
-        deck.push({ ...pick(pool.length ? pool : ALL_CARD_POOL) });
+        const src = Math.random() < 0.3 ? ALL_CARD_POOL : (pool.length ? pool : ALL_CARD_POOL);
+        deck.push({ ...pick(src) });
       }
       continue;
     }
@@ -577,7 +578,8 @@ function simulateRunArch(arch: Archetype, difficulty: Difficulty): boolean {
     if (node.type === 'ELITE' || node.type === 'BATTLE') {
       if (node.type === 'ELITE') playerHp = Math.min(PLAYER.MAX_HP, playerHp + Math.floor(PLAYER.MAX_HP * 0.25));
       const pool = ALL_CARD_POOL.filter((c) => c.archetype === arch);
-      deck.push({ ...pick(pool.length ? pool : ALL_CARD_POOL) });
+      const src = Math.random() < 0.3 ? ALL_CARD_POOL : (pool.length ? pool : ALL_CARD_POOL);
+      deck.push({ ...pick(src) });
     }
   }
   return true;

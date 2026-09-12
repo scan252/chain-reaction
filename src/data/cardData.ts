@@ -72,9 +72,9 @@ const RIPOSTE_CARDS: CardTemplate[] = [
 
 // ---------- 焚身流（7） ----------
 const BURN_CARDS: CardTemplate[] = [
-  card({ templateId: 'bu_price', name: '血偿', type: CardType.ACTION, baseValue: 24, effectId: 'BLOOD_PRICE', burnCost: 3, description: '焚身3：24 伤害（本场首次打出付 3 HP，重复打出效果 ×0.6）', color: '#dc2626', archetype: Archetype.BURN }),
-  card({ templateId: 'bu_ward', name: '燃烧意志', type: CardType.ACTION, baseValue: 13, effectId: 'BURN_WARD', burnCost: 2, description: '焚身2：13 护盾（本场首次打出失去 2 HP）', color: '#b91c1c', archetype: Archetype.BURN }),
-  card({ templateId: 'bu_rage', name: '血怒', type: CardType.MODIFIER, baseValue: 3, effectId: 'BLOOD_RAGE', description: '本回合每有一张焚身卡，全场动作牌本场 +3', color: '#ea580c', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
+  card({ templateId: 'bu_price', name: '血偿', type: CardType.ACTION, baseValue: 26, effectId: 'BLOOD_PRICE', burnCost: 3, description: '焚身3：26 伤害（本场首次打出付 3 HP，重复打出效果 ×0.7）', color: '#dc2626', archetype: Archetype.BURN }),
+  card({ templateId: 'bu_ward', name: '燃烧意志', type: CardType.ACTION, baseValue: 15, effectId: 'BURN_WARD', burnCost: 2, description: '焚身2：15 护盾（本场首次打出失去 2 HP）', color: '#b91c1c', archetype: Archetype.BURN }),
+  card({ templateId: 'bu_rage', name: '血怒', type: CardType.MODIFIER, baseValue: 4, effectId: 'BLOOD_RAGE', description: '本回合每有一张焚身卡，全场动作牌本场 +4', color: '#ea580c', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
   card({ templateId: 'bu_scorch', name: '焦土', type: CardType.ACTION, baseValue: 15, effectId: 'SCORCH', description: '15 伤害；点燃此槽 3 回合（该槽数值 +100%）', color: '#f97316', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
   card({ templateId: 'bu_deadly', name: '亡命', type: CardType.MODIFIER, baseValue: 0, effectId: 'DEADLY', description: '若 HP ≤ 50%，本回合后续攻击 ×1.5', color: '#7f1d1d', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),
   card({ templateId: 'bu_sacrifice', name: '献祭', type: CardType.ACTION, baseValue: 5, effectId: 'SACRIFICE', burnCost: 4, description: '焚身4：全场动作牌本场 +5（首次打出付 4 HP，重复只加不扣）', color: '#991b1b', rarity: Rarity.UNCOMMON, archetype: Archetype.BURN }),

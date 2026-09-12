@@ -324,10 +324,13 @@ export const useRunStore = create<RunState>()(
         ? REWARD.ELITE_DIFF_RARITY_RARE
         : REWARD.RARITY_ODDS.RARE;
 
-      // 生成两轮卡牌奖励（精英：每轮保底 1 稀有；按卡组主流派定向供给）
+      // v3.3：普通战斗 1 轮三选一；精英 2 轮且保底稀有（抑制卡组免费膨胀，
+      // 让每次选卡都有分量、流派构筑价值凸显）。补偿：基础金币上调。
       const deck = get().masterDeck;
       const round1Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds, deckBias: deck });
-      const round2Cards = generateRewardCards(3, { guaranteeRare: isElite, rareOdds, deckBias: deck });
+      const round2Cards = isElite
+        ? generateRewardCards(3, { guaranteeRare: true, rareOdds, deckBias: deck })
+        : [];
 
       let gold = REWARD.GOLD_MIN + Math.floor(Math.random() * REWARD.GOLD_VARIANCE);
       if (isElite) gold += REWARD.ELITE_GOLD_BONUS;
@@ -337,8 +340,8 @@ export const useRunStore = create<RunState>()(
         gold,
         bonusSlot: Math.random() < (isElite ? 0.35 : REWARD.BONUS_SLOT_CHANCE) && pipelineSlots < PIPELINE.MAX_SLOTS,
         currentRound: 1,
-        totalRounds: 2,
-        allCards: [round1Cards, round2Cards],
+        totalRounds: isElite ? 2 : 1,
+        allCards: isElite ? [round1Cards, round2Cards] : [round1Cards],
       };
 
       set((state) => {

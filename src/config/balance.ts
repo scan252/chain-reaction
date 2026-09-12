@@ -32,8 +32,8 @@ export const PIPELINE = {
 
 /** 奖励 */
 export const REWARD = {
-  /** 战斗胜利金币下限 */
-  GOLD_MIN: 15,
+  /** 战斗胜利金币下限（v3.3：奖励改单轮后上调，金币替代被删的那次选卡） */
+  GOLD_MIN: 22,
   /** 战斗胜利金币随机增量上限（不含） */
   GOLD_VARIANCE: 16,
   /** 精英战斗额外金币 */
@@ -45,7 +45,7 @@ export const REWARD = {
   /** 精英难度稀有率提升 */
   ELITE_DIFF_RARITY_RARE: 0.12,
   /** 跳过卡牌奖励的补偿金币 */
-  SKIP_COMPENSATION_GOLD: 10,
+  SKIP_COMPENSATION_GOLD: 15,
 } as const;
 
 /** 商店 */
@@ -68,14 +68,14 @@ export const SHOP = {
 
 /** 休息 / 事件 */
 export const REST = {
-  /** 休息回血比例 */
-  HEAL_RATIO: 0.4,
+  /** 休息回血比例（v3.3：0.4 → 0.3，收紧休整经济） */
+  HEAL_RATIO: 0.3,
   /** 冥想回复 MP 数 */
   MEDITATE_MP: 2,
 } as const;
 
 export const EVENT = {
-  HEAL_RATIO: 0.3,
+  HEAL_RATIO: 0.25,
   GOLD: 100,
 } as const;
 
@@ -113,10 +113,10 @@ export const KEYWORD = {
   RIPOSTE_ENGINE_MULTIPLIER: 1.5,
 } as const;
 
-/** 敌人难度系数（v3.2：方差收敛后用系数回填全局威胁度） */
+/** 敌人难度系数（v3.3：方差收敛+奖励单轮化后的全局威胁度刻度） */
 export const DIFFICULTY = {
-  NORMAL: { hpMul: 1.12, dmgMul: 1.06 },
-  ELITE: { hpMul: 1.28, dmgMul: 1.16 },
+  NORMAL: { hpMul: 1.17, dmgMul: 1.09 },
+  ELITE: { hpMul: 1.32, dmgMul: 1.18 },
 } as const;
 
 /** 升级（锻造） */
